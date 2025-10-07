@@ -1,49 +1,21 @@
-import {HashLink} from 'react-router-hash-link';
-import {motion} from "motion/react"
-
 export default function Footer() {
   return (
-    <footer className="w-full text-offWhite">
-      {/* Top Section */}
-      <motion.div className="bg-gradient-to-b from-gray-800 to-gray-700 py-5 text-center"
-                initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1,  transition: { duration: 0.75 } }}>
-        <p className="text-sm">© {new Date().getFullYear()} My Album — All Rights Reserved</p>
-      </motion.div>
-
-      {/* Bottom Section */}
-      <motion.div className="bg-gradient-to-b from-gray-800 to-gray-700 py-5 px-6 grid grid-cols-1 md:grid-cols-2 gap-8"
-              initial={{ opacity: 0}}
-        whileInView={{ opacity: 1,  transition: { duration: 0.75 } }}>
-        
-        {/* Quick Links */}
-        <div className="text-center">
-          <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-          <ul className="space-y-2">
-            <li><HashLink smooth to="#plansection" className="hover:underline">Plans</HashLink></li>
-            <li><HashLink smooth to="#whyussection" className="hover:underline">Why Us</HashLink></li>
-            <li><HashLink smooth to="#enterprisesection" className="hover:underline">Enterprise</HashLink></li>
-          </ul>
-        </div>
-
-        {/* Contact Info */}
-        <div className="text-center">
-          <h3 className="text-lg font-semibold mb-4">Contact</h3>
-          <ul className="space-y-2">
-            <li>
-              <a href="mailto:support@myalbum.com" className="hover:underline">
-                support@myalbum.com
-              </a>
-            </li>
-            <li>
-              <a href="/terms" className="hover:underline">Terms & Conditions</a>
-            </li>
-            <li>
-              <a href="/privacy" className="hover:underline">Privacy Policy</a>
-            </li>
-          </ul>
-        </div>
-      </motion.div>
+    <footer className="bg-[#f9ede8] py-8 px-4 text-center text-[#6b5f52]">
+      <p className="mb-3">© 2025 Albumify. All rights reserved.</p>
+      <div className="flex justify-center flex-wrap gap-6 text-sm">
+        <a href="/about" className="hover:text-[#a0522d] transition">
+          About Us
+        </a>
+        <a href="/contact" className="hover:text-[#a0522d] transition">
+          Contact
+        </a>
+        <a href="/privacy" className="hover:text-[#a0522d] transition">
+          Privacy
+        </a>
+        <a href="/terms" className="hover:text-[#a0522d] transition">
+          Terms
+        </a>
+      </div>
     </footer>
   );
 }
