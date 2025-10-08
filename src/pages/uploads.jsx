@@ -82,7 +82,8 @@ export default function UploadPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ files: files.map(f => ({ mime: f.mime, size: f.size })) }),
       });
-      if (!initRes.ok) throw new Error("Upload init failed");
+      
+      if (!initRes.ok){const errdata = await initRes.json(); throw new Error(errdata.message||"Upload init failed");}
       const { items } = await initRes.json();
 
       const uploadedKeysLocal = [];
@@ -123,9 +124,9 @@ export default function UploadPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),
       });
-      if (!completeRes.ok) throw new Error("Upload complete failed");
+      const completeresdata=await completeRes.json();
+      if (!completeRes.ok) throw new Error(completeresdata.message||"Upload complete failed");
 
-      await completeRes.json();
       alert("Upload completed successfully!");
 
       // Reset form

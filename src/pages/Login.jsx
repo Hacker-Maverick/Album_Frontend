@@ -29,8 +29,8 @@ export default function Login() {
         body: JSON.stringify(form),
       })
 
-      if (!res.ok) throw new Error("Invalid credentials")
       const data = await res.json()
+      if (!res.ok) throw new Error(data.message)
 
       dispatch(setUser({ user: { email: data.email }, token: data.token }))
       fetchUser(data.token, dispatch)
@@ -49,8 +49,8 @@ export default function Login() {
         body: JSON.stringify({ idToken: credentialResponse.credential }),
       })
 
-      if (!res.ok) throw new Error("Google login failed")
       const data = await res.json()
+      if (!res.ok) throw new Error(data.message || "Google login failed")
 
       dispatch(setUser({ user: { email: data.email }, token: data.token }))
       fetchUser(data.token, dispatch)

@@ -42,8 +42,8 @@ export default function Signup() {
         body: JSON.stringify({ ...form, plan: planFromCTA.name }),
       });
 
-      if (!res.ok) throw new Error("Signup failed");
       const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Signup failed");
 
       // Save token and user
       dispatch(setUser({ user: { email: data.email }, token: data.token }));
@@ -75,8 +75,8 @@ export default function Signup() {
         body: JSON.stringify({ idToken: credentialResponse.credential, plan: planFromCTA.name }),
       });
 
-      if (!res.ok) throw new Error("Google signup failed");
       const data = await res.json();
+      if (!res.ok) throw new Error(data.message||"Google signup failed");
 
       dispatch(setUser({ user: { email: data.email }, token: data.token }));
 

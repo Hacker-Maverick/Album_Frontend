@@ -33,8 +33,8 @@ export default function CompleteProfile() {
         body: JSON.stringify(form),
       });
 
-      if (!res.ok) throw new Error("Failed to complete profile");
       const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to complete profile");
 
       // ✅ Pass the original plan to payment page
       navigate("/payment", { state: { plan: planFromSignup.name } });

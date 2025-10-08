@@ -74,8 +74,8 @@ export default function Payment() {
               }),
             });
 
-            if (!verifyRes.ok) throw new Error("Payment verification failed");
             const verifyData = await verifyRes.json();
+            if (!verifyRes.ok) throw new Error(verifyData.message||"Payment verification failed");
 
             alert("✅ Payment successful! Plan activated.");
             fetchUser(data.token, dispatch)
