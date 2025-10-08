@@ -4,6 +4,8 @@ import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import Payment from "./pages/Payment"
 import CompleteProfile from "./pages/CompleteProfile"
+import UploadPage from "./pages/uploads"
+// import Dashboard from "./pages/dashboard"
 
 export default function AppRouter() {
   return (
@@ -14,6 +16,9 @@ export default function AppRouter() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/payment" element={<Payment />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
+        <Route path="/upload" element={<UploadPage />} />
+        {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+
         {/* <Route path="" element={<Profile />} />
         <Route path="" element={<AlbumDetail />} /> */}
       </Routes>

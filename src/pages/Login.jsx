@@ -54,7 +54,7 @@ export default function Login() {
 
       dispatch(setUser({ user: { email: data.email }, token: data.token }))
       fetchUser(data.token, dispatch)
-      navigate("/dashboard")
+      navigate("/upload")
     } catch (err) {
       alert(err.message || "Google login failed")
     }

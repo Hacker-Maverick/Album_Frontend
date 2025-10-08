@@ -1,17 +1,17 @@
 // src/pages/Payment.jsx
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {loadRazorpay} from "../utils/loadRazorpay.js";
 import { fetchUser } from "../utils/fetchUser.js"
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function Payment() {
+    const dispatch = useDispatch()
   const location = useLocation();
   const navigate = useNavigate();
   const token = useSelector((state) => state.user.token);
-console.log(token)
   const plan = location.state?.plan || "Free";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
