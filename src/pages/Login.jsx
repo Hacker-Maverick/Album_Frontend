@@ -33,6 +33,7 @@ export default function Login() {
       if (!res.ok) throw new Error(data.message)
 
       dispatch(setUser({ user: { email: data.email }, token: data.token }))
+      localStorage.setItem("album_jwt_token", data.token);
       fetchUser(data.token, dispatch)
       navigate("/dashboard")
     } catch (err) {
@@ -53,8 +54,9 @@ export default function Login() {
       if (!res.ok) throw new Error(data.message || "Google login failed")
 
       dispatch(setUser({ user: { email: data.email }, token: data.token }))
+      localStorage.setItem("album_jwt_token", data.token);
       fetchUser(data.token, dispatch)
-      navigate("/upload")
+      navigate("/dashboard")
     } catch (err) {
       alert(err.message || "Google login failed")
     }

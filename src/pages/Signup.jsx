@@ -47,6 +47,7 @@ export default function Signup() {
 
       // Save token and user
       dispatch(setUser({ user: { email: data.email }, token: data.token }));
+      localStorage.setItem("album_jwt_token", data.token);
       
 
       // ✅ Manual users → payment directly
@@ -79,9 +80,15 @@ export default function Signup() {
       if (!res.ok) throw new Error(data.message||"Google signup failed");
 
       dispatch(setUser({ user: { email: data.email }, token: data.token }));
+      localStorage.setItem("album_jwt_token", data.token);
 
       // ✅ Google users → first complete profile
-      navigate("/complete-profile", { state: { plan: planFromCTA } });
+      if(res.status === 200) { // Existing user
+        fetchUser(data.token, dispatch)
+        return navigate("/dashboard");
+      }else{
+        navigate("/complete-profile", { state: { plan: planFromCTA } });
+      }
     } catch (err) {
       setError(err.message);
     } finally {
