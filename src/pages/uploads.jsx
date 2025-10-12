@@ -2,6 +2,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
 import { useSelector } from "react-redux";
+import { generateThumbnail } from "../utils/generateThumbnail"; // 👈 add this
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -27,7 +28,8 @@ export default function UploadPage() {
     if (user.main_album) arr.push({ _id: user.main_album, name: "Main Album" });
     if (user.groups?.length) {
       user.groups.forEach((g) => {
-        if (g.albumId) arr.push({ _id: g.albumId, name: g.groupName || `Album-${g.albumId}` });
+        if (g.albumId)
+          arr.push({ _id: g.albumId, name: g.groupName || `Album-${g.albumId}` });
       });
     }
     return arr;
@@ -67,31 +69,53 @@ export default function UploadPage() {
     setTagInput("");
   };
 
+  // -------------------------------------
+  // Upload handler
+  // -------------------------------------
   const handleUpload = async () => {
     if (!files.length) return alert("Please add files");
-    if (!eventName || !eventDate) return alert("Event name and date are required");
-    if (!selectedAlbums.length) return alert("Select at least one album");
+    if (!eventName || !eventDate)
+      return alert("Event name and date are required");
+    if (!selectedAlbums.length)
+      return alert("Select at least one album");
 
     setIsUploading(true);
     setFadeOut(false);
 
     try {
-      // Init
+      // 1️⃣ INIT request
       const initRes = await fetch(`${API_BASE}/upload-init`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ files: files.map(f => ({ mime: f.mime, size: f.size })) }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          files: files.map((f) => ({ mime: f.mime, size: f.size })),
+        }),
       });
-      
-      if (!initRes.ok){const errdata = await initRes.json(); throw new Error(errdata.message||"Upload init failed");}
+
+      if (!initRes.ok) {
+        const errData = await initRes.json();
+        throw new Error(errData.message || "Upload init failed");
+      }
+
       const { items } = await initRes.json();
-
       const uploadedKeysLocal = [];
+      const uploadedThumbKeysLocal = [];
 
+      // 2️⃣ Upload each file + generated thumbnail
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const item = items[i];
 
+        // Generate thumbnail automatically
+        const thumbBlob = await generateThumbnail(file.file, 400);
+        const thumbFile = new File([thumbBlob], "thumbnail.jpg", {
+          type: "image/jpeg",
+        });
+
+        // Upload main file
         await new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
           xhr.upload.onprogress = (e) => {
@@ -107,25 +131,42 @@ export default function UploadPage() {
           xhr.send(file.file);
         });
 
+        // Upload thumbnail
+        await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.onload = () => resolve(xhr.response);
+          xhr.onerror = () => reject(xhr.statusText);
+          xhr.open("PUT", item.thumbnailUrl);
+          xhr.setRequestHeader("Content-Type", "image/jpeg");
+          xhr.send(thumbFile);
+        });
+
         uploadedKeysLocal.push(item.key);
+        uploadedThumbKeysLocal.push(item.thumbnailKey);
       }
 
-      // Upload complete
+      // 3️⃣ COMPLETE request
       const body = {
         keys: uploadedKeysLocal,
-        albumIds: selectedAlbums,      
+        thumbnailKeys: uploadedThumbKeysLocal, // 👈 send thumbnail keys
+        albumIds: selectedAlbums,
         event: eventName,
         date: eventDate,
-        taggeesUsernames: selectedTags, 
+        taggeesUsernames: selectedTags,
       };
 
       const completeRes = await fetch(`${API_BASE}/upload-complete`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(body),
       });
-      const completeresdata=await completeRes.json();
-      if (!completeRes.ok) throw new Error(completeresdata.message||"Upload complete failed");
+
+      const completeData = await completeRes.json();
+      if (!completeRes.ok)
+        throw new Error(completeData.message || "Upload complete failed");
 
       alert("Upload completed successfully!");
 
@@ -147,48 +188,55 @@ export default function UploadPage() {
     }
   };
 
+  // -------------------------------------
+  // UI (unchanged)
+  // -------------------------------------
   return (
     <div className="min-h-screen flex flex-col items-center p-8 bg-[#fffaf7] text-[#5c3a21]">
       <h1 className="text-2xl font-semibold mb-2">Upload Your Photos</h1>
-      <p className="mb-8 text-gray-500">Relive your memories by adding them to your PhotoVault.</p>
+      <p className="mb-8 text-gray-500">
+        Relive your memories by adding them to your PhotoVault.
+      </p>
 
-      {/* Drag-drop box */}
       <div
         {...getRootProps()}
         className="border-2 border-dashed border-[#d4bba4] rounded-lg p-12 w-full max-w-xl text-center cursor-pointer mb-6 hover:border-[#8b5e3c] transition"
       >
         <input {...getInputProps()} />
         {isDragActive ? <p>Drop files here...</p> : <p>Click to upload or drag and drop</p>}
-        <p className="text-sm text-gray-400">SVG, PNG, JPG or GIF (max 800x400px)</p>
+        <p className="text-sm text-gray-400">
+          SVG, PNG, JPG, GIF or MP4 (max 800x400px)
+        </p>
       </div>
 
-      {/* Files preview */}
       <div className="w-full max-w-xl space-y-2 mb-6">
-        {files.map(f => (
-          <div key={f.id} className="flex items-center justify-between border border-[#d4bba4] rounded p-2 bg-white">
-            <span>{f.file.name} ({Math.round(f.size / 1024)} KB)</span>
+        {files.map((f) => (
+          <div
+            key={f.id}
+            className="flex items-center justify-between border border-[#d4bba4] rounded p-2 bg-white"
+          >
+            <span>
+              {f.file.name} ({Math.round(f.size / 1024)} KB)
+            </span>
           </div>
         ))}
       </div>
 
-      {/* Event name */}
       <input
         type="text"
         placeholder="Event Name"
         value={eventName}
-        onChange={e => setEventName(e.target.value)}
+        onChange={(e) => setEventName(e.target.value)}
         className="border border-[#d4bba4] w-full max-w-xl p-2 rounded mb-4"
       />
 
-      {/* Date */}
       <input
         type="date"
         value={eventDate}
-        onChange={e => setEventDate(e.target.value)}
+        onChange={(e) => setEventDate(e.target.value)}
         className="border border-[#d4bba4] w-full max-w-xl p-2 rounded mb-4"
       />
 
-      {/* Albums */}
       <div className="w-full max-w-xl mb-4">
         <label className="block mb-1 text-sm text-[#5c3a21]">Albums</label>
         <select
@@ -209,8 +257,8 @@ export default function UploadPage() {
           ))}
         </select>
         <div className="flex gap-2 mt-2 flex-wrap">
-          {selectedAlbums.map(id => {
-            const alb = albums.find(a => a._id === id);
+          {selectedAlbums.map((id) => {
+            const alb = albums.find((a) => a._id === id);
             return (
               <span
                 key={id}
@@ -218,7 +266,9 @@ export default function UploadPage() {
               >
                 {alb?.name}
                 <button
-                  onClick={() => setSelectedAlbums(selectedAlbums.filter(x => x !== id))}
+                  onClick={() =>
+                    setSelectedAlbums(selectedAlbums.filter((x) => x !== id))
+                  }
                   className="text-xs text-red-600 hover:text-red-800"
                 >
                   ✖
@@ -229,7 +279,6 @@ export default function UploadPage() {
         </div>
       </div>
 
-      {/* Tags */}
       <div className="w-full max-w-xl mb-6 relative">
         <label className="block mb-1 text-sm text-[#5c3a21]">Tag Friends</label>
         <input
@@ -248,7 +297,9 @@ export default function UploadPage() {
         {tagInput && (
           <div className="absolute bg-white border border-gray-200 rounded shadow-md w-full mt-1 z-10 max-h-32 overflow-y-auto">
             {friends
-              .filter((f) => f.username.toLowerCase().includes(tagInput.toLowerCase()))
+              .filter((f) =>
+                f.username.toLowerCase().includes(tagInput.toLowerCase())
+              )
               .map((f) => (
                 <div
                   key={f.username}
@@ -261,14 +312,16 @@ export default function UploadPage() {
           </div>
         )}
         <div className="flex gap-2 mt-2 flex-wrap">
-          {selectedTags.map(username => (
+          {selectedTags.map((username) => (
             <span
               key={username}
               className="px-2 py-1 rounded-full bg-[#f3e1d3] text-sm flex items-center gap-1"
             >
               {username}
               <button
-                onClick={() => setSelectedTags(selectedTags.filter(x => x !== username))}
+                onClick={() =>
+                  setSelectedTags(selectedTags.filter((x) => x !== username))
+                }
                 className="text-xs text-red-600 hover:text-red-800"
               >
                 ✖
@@ -278,7 +331,6 @@ export default function UploadPage() {
         </div>
       </div>
 
-      {/* Upload button */}
       {files.length > 0 && (
         <button
           onClick={handleUpload}
@@ -288,7 +340,6 @@ export default function UploadPage() {
         </button>
       )}
 
-      {/* Progress box */}
       {isUploading && (
         <div
           className={`w-full max-w-xl mt-6 p-4 rounded-lg border border-[#d4bba4] bg-white shadow transition-opacity duration-500 ${

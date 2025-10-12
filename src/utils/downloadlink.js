@@ -15,9 +15,9 @@ export async function fetchDownloadLinks(imageIds) {
       },
       body: JSON.stringify({ imageIds }),
     });
-    if (!response.ok) throw new Error("Failed to fetch download links");
-
     const data = await response.json();
+    if (!response.ok) throw new Error(data||"Failed to fetch download links");
+
     return data.urls || [];
   } catch (err) {
     console.error("Error fetching download links:", err);

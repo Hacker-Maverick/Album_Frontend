@@ -291,7 +291,12 @@ export default function ViewImage() {
           <div className="text-sm text-[#C9C3BD]">{showMonthYear}</div>
           <button
             aria-label="Close"
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              navigate(-1); 
+              setTimeout(() => {
+                window.location.reload();
+              }, 150);
+            }}
             className="text-xl opacity-80 hover:opacity-100"
           >
             ×
@@ -357,9 +362,8 @@ export default function ViewImage() {
             <img
               src={viewUrl}
               alt={curEventName}
-              className={`max-w-[90vw] max-h-[80vh] object-contain transition-transform duration-150 ease-out ${
-                isImageLoading ? "opacity-0" : "opacity-100"
-              } select-none`}
+              className={`max-w-[90vw] max-h-[80vh] object-contain transition-transform duration-150 ease-out ${isImageLoading ? "opacity-0" : "opacity-100"
+                } select-none`}
               style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                 transformOrigin: "center center",

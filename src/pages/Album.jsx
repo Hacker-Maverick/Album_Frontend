@@ -161,6 +161,7 @@ export default function AlbumGallery() {
 
     const Thumbnail = ({ src, alt }) => {
         const [loaded, setLoaded] = useState(false);
+        console.log("Thumbnail src:", src);
         return (
             <div className="w-full h-full bg-[#f7f3ee] rounded-lg overflow-hidden relative">
                 {!loaded && <div className="absolute inset-0 animate-pulse bg-[#efe7dd]" />}
