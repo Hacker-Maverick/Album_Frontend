@@ -24,6 +24,7 @@ export default function AppRouter() {
         <Route path="/complete-profile" element={<CompleteProfile />} />
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard/hidden" element={<Dashboard />} />
         <Route path="/imageview/:imageId" element={<ImageViewPage />} />
 
         {/* <Route path="" element={<Profile />} />

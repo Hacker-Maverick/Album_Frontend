@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { store } from "../../store";
 import { initializeAlbumsFromUser, loadMoreImages } from "../utils/loadAlbum";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function AlbumGallery() {
     const user = useSelector((s) => s.user.user);
@@ -14,8 +14,9 @@ export default function AlbumGallery() {
     const [hasMore, setHasMore] = useState(true);
     const sentinelRef = useRef(null);
     const observerRef = useRef(null);
-
     const navigate = useNavigate();
+    const location = useLocation();
+    const isHiddenView = location.pathname.includes("/dashboard/hidden");
 
     useEffect(() => {
         if (!user) {
@@ -23,19 +24,36 @@ export default function AlbumGallery() {
             setSelectedAlbum(null);
             return;
         }
+
+        // 🧠 Case 1: hidden route
+        if (location.pathname.includes("/dashboard/hidden")) {
+            const hiddenGroup = user.groups?.find(
+                (g) => g.groupName?.toLowerCase() === "hidden"
+            );
+
+            
+            if (hiddenGroup?.albumId) {
+                if (selectedAlbum?.id === hiddenGroup.albumId) return;
+                setSelectedAlbum({
+                    id: hiddenGroup.albumId,
+                    name: hiddenGroup.groupName,
+                });
+            }
+            return; // ✅ stop here
+        }
+
+        // 🧠 Case 2: normal route (dashboard)
         const opts = [];
         if (user.main_album) opts.push({ id: String(user.main_album), name: "Main Album" });
         if (Array.isArray(user.groups)) {
             user.groups.forEach((g) => {
-                if (g.albumId) {
-                    const name = g.groupName || `Album-${String(g.albumId)}`;
-                    opts.push({ id: String(g.albumId), name });
-                }
+                if (g.albumId) opts.push({ id: String(g.albumId), name: g.groupName || `Album-${g.albumId}` });
             });
         }
         setAlbumOptions(opts);
         if (!selectedAlbum && opts.length) setSelectedAlbum(opts[0]);
-    }, [user]);
+    }, [user, location.pathname]);
+
 
     useEffect(() => {
         if (user) initializeAlbumsFromUser();
@@ -161,7 +179,6 @@ export default function AlbumGallery() {
 
     const Thumbnail = ({ src, alt }) => {
         const [loaded, setLoaded] = useState(false);
-        console.log("Thumbnail src:", src);
         return (
             <div className="w-full h-full bg-[#f7f3ee] rounded-lg overflow-hidden relative">
                 {!loaded && <div className="absolute inset-0 animate-pulse bg-[#efe7dd]" />}
@@ -184,20 +201,39 @@ export default function AlbumGallery() {
     return (
         <div className="min-h-screen p-4 md:p-6 lg:p-10" style={{ background: "#FBF7F2" }}>
             <div className="flex flex-wrap gap-3 mb-6">
-                {albumOptions.map((opt) => (
-                    <button
-                        key={opt.id}
-                        onClick={() => {
-                            setSelectedAlbum(opt);
-                            setInitialLoaded(false);
-                            setHasMore(true);
-                        }}
-                        className={`px-4 py-2 rounded-full text-sm font-medium shadow-sm ${selectedAlbum && selectedAlbum.id === opt.id ? "bg-[#C9A97C] text-white" : "bg-white text-gray-700 border border-gray-200 hover:bg-[#fff8f2]"
-                            }`}
-                    >
-                        {opt.name}
-                    </button>
-                ))}
+                {/* Detect if user is in hidden album route */}
+                {isHiddenView
+                    ? (
+                        // 🧩 When viewing hidden album — show ONLY hidden album title/button
+                        <button
+                            key="hidden"
+                            className="px-4 py-2 rounded-full text-sm font-medium shadow-sm bg-[#C9A97C] text-white cursor-default"
+                        >
+                            Hidden Album
+                        </button>
+                    )
+                    : (
+                        // 🧩 Normal mode — show all except "hidden"
+                        albumOptions
+                            .filter((opt) => opt.name.toLowerCase() !== "hidden")
+                            .map((opt) => (
+                                <button
+                                    key={opt.id}
+                                    onClick={() => {
+                                        setSelectedAlbum(opt);
+                                        setInitialLoaded(false);
+                                        setHasMore(true);
+                                    }}
+                                    className={`px-4 py-2 rounded-full text-sm font-medium shadow-sm ${selectedAlbum && selectedAlbum.id === opt.id
+                                        ? "bg-[#C9A97C] text-white"
+                                        : "bg-white text-gray-700 border border-gray-200 hover:bg-[#fff8f2]"
+                                        }`}
+                                >
+                                    {opt.name}
+                                </button>
+                            ))
+                    )
+                }
             </div>
 
             {!selectedAlbum && <div className="text-center text-gray-600 py-20">No albums available</div>}
