@@ -101,7 +101,7 @@ export default function ImageFooter({
   const moveToAlbum = async (targetAlbumId) => {
     if (!targetAlbumId || targetAlbumId === albumId) return setMoveOpen(false);
     await editImages({
-      albumIds: [albumId, targetAlbumId],
+      albumIds: [targetAlbumId],
       imageIds: [imageId],
       event: eventName,
       date: eventDate,
@@ -120,7 +120,7 @@ export default function ImageFooter({
   const confirmCopy = async () => {
     if (!copySelection.length) return setCopyOpen(false);
     await editImages({
-      albumIds: Array.from(new Set([albumId, ...copySelection])),
+      albumIds: Array.from(new Set([ ...copySelection])),
       imageIds: [imageId],
       event: eventName,
       date: eventDate,

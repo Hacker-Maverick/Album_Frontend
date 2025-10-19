@@ -19,7 +19,7 @@ export default function Payment() {
   useEffect(() => {
     // Redirect immediately if Free plan
     if (plan.toLowerCase() === "free") {
-      fetchUser(data.token, dispatch)
+      fetchUser(token, dispatch)
       navigate("/dashboard");
     }
   }, []);
