@@ -1,7 +1,7 @@
 // src/pages/Login.jsx
 import React, { useState } from "react"
 import { useDispatch } from "react-redux"
-import { useNavigate } from "react-router-dom"
+import { Link,useNavigate } from "react-router-dom"
 import { setUser } from "../../store/userSlice"
 import { GoogleLogin } from "@react-oauth/google"
 import { fetchUser } from "../utils/fetchUser"
@@ -109,9 +109,9 @@ export default function Login() {
             <label className="flex items-center text-gray-600">
               <input type="checkbox" className="mr-2 rounded" /> Remember me
             </label>
-            <a href="/forgot-password" className="text-[#b27d48] hover:underline">
+            <Link to="/forgot-password" className="text-[#b27d48] hover:underline">
               Forgot Password?
-            </a>
+            </Link>
           </div>
 
           {/* Login Button */}

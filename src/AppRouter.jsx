@@ -9,6 +9,9 @@ import Dashboard from "./pages/dashboard"
 import RouteTracker from "./pages/routeTracker"
 import Reload from "./pages/Reload"
 import ImageViewPage from "./pages/Imageview"
+import RequestsPage from "./pages/Request"
+import ForgotPassword from "./pages/ForgotPassword"
+import Profile from "./pages/Profile"
 
 
 export default function AppRouter() {
@@ -26,6 +29,9 @@ export default function AppRouter() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/dashboard/hidden" element={<Dashboard />} />
         <Route path="/imageview/:imageId" element={<ImageViewPage />} />
+        <Route path="/request" element={<RequestsPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/profile" element={<Profile />} />
 
         {/* <Route path="" element={<Profile />} />
         <Route path="" element={<AlbumDetail />} /> */}

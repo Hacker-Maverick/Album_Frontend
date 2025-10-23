@@ -3,6 +3,7 @@ import React, { useState, useCallback, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
 import { useSelector } from "react-redux";
 import { generateThumbnail } from "../utils/generateThumbnail"; // 👈 add this
+import UserNav from "../components/usernav.jsx";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -191,7 +192,8 @@ export default function UploadPage() {
   // -------------------------------------
   // UI (unchanged)
   // -------------------------------------
-  return (
+  return (<>
+    <UserNav />
     <div className="min-h-screen flex flex-col items-center p-8 bg-[#fffaf7] text-[#5c3a21]">
       <h1 className="text-2xl font-semibold mb-2">Upload Your Photos</h1>
       <p className="mb-8 text-gray-500">
@@ -359,5 +361,6 @@ export default function UploadPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

@@ -151,7 +151,6 @@ const handleDownload = async () => {
       mode: "move",
       albums: [targetAlbumId], // ✅ only target album
     });
-    console.log("Move to album:", targetAlbumId);
   };
 
   // ✅ FIXED: Copy now passes only target albums
@@ -162,7 +161,6 @@ const handleDownload = async () => {
       mode: "copy",
       albums: targetAlbums, // ✅ no default current album
     });
-    console.log("Copy to albums:", targetAlbums);
   };
 
   const confirmEventAction = async () => {

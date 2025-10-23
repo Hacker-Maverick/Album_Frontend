@@ -121,11 +121,11 @@ export default function ViewMedia() {
   }
 
   const cur = images[currentIndex];
-const fileName = cur?.name || cur?.originalname || cur?.key || "";
-const mimeType = cur?.type || cur?.mime || "";
-const isVideo =
-  mimeType.toLowerCase().includes("video") ||
-  /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(fileName);
+  const fileName = cur?.name || cur?.originalname || cur?.key || "";
+  const mimeType = cur?.type || cur?.mime || "";
+  const isVideo =
+    mimeType.toLowerCase().includes("video") ||
+    /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(fileName);
   const curEventName = eventName || cur.event || albumName || "Untitled";
   const headerMonthYear = eventDate
     ? new Date(eventDate).toLocaleString(undefined, { month: "long", year: "numeric" })
@@ -213,9 +213,8 @@ const isVideo =
                 controls
                 autoPlay
                 playsInline
-                className={`max-w-[90vw] max-h-[80vh] rounded-lg transition-opacity duration-150 ${
-                  isMediaLoading ? "opacity-0" : "opacity-100"
-                }`}
+                className={`max-w-[90vw] max-h-[80vh] rounded-lg transition-opacity duration-150 ${isMediaLoading ? "opacity-0" : "opacity-100"
+                  }`}
                 onLoadedData={() => setIsMediaLoading(false)}
                 onError={() => setIsMediaLoading(false)}
               />
@@ -223,9 +222,8 @@ const isVideo =
               <img
                 src={viewUrl}
                 alt={curEventName}
-                className={`max-w-[90vw] max-h-[80vh] object-contain transition-transform duration-150 ease-out ${
-                  isMediaLoading ? "opacity-0" : "opacity-100"
-                } select-none`}
+                className={`max-w-[90vw] max-h-[80vh] object-contain transition-transform duration-150 ease-out ${isMediaLoading ? "opacity-0" : "opacity-100"
+                  } select-none`}
                 style={{
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                   transformOrigin: "center center",
@@ -262,20 +260,23 @@ const isVideo =
         )}
       </main>
 
-      <ImageFooter
-        albumId={albumId}
-        albumName={albumName}
-        eventDate={eventDate}
-        eventName={curEventName}
-        imageId={images[currentIndex]?.id || images[currentIndex]?._id}
-        viewUrl={viewUrl}
-        downloadUrl={downloadUrl}
-        user={user}
-        token={token}
-        images={images}
-        currentIndex={currentIndex}
-        setCurrentIndex={setCurrentIndex}
-      />
+      {!state?.fromRequest && (
+        <ImageFooter
+          albumId={albumId}
+          albumName={albumName}
+          eventDate={eventDate}
+          eventName={curEventName}
+          imageId={images[currentIndex]?.id || images[currentIndex]?._id}
+          viewUrl={viewUrl}
+          downloadUrl={downloadUrl}
+          user={user}
+          token={token}
+          images={images}
+          currentIndex={currentIndex}
+          setCurrentIndex={setCurrentIndex}
+        />
+      )}
+
     </div>
   );
 }

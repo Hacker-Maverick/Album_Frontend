@@ -25,8 +25,6 @@ export async function deleteImages(albumId, imageIds = [], permanently = false) 
       permanently,
     };
 
-    console.log("Deleting images with body:", body);
-
     const res = await fetch(`${API_URL}/delete`, {
       method: "POST",
       headers: {

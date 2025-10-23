@@ -68,6 +68,7 @@ export async function loadMoreImages(albumId, albumName, n) {
         appendImages({
           albumName,
           eventName: ev.event,
+          eventDate: ev.date,
           images: ev.images,
           total: ev.total,
         })

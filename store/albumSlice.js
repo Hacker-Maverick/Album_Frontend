@@ -49,7 +49,7 @@ const albumsSlice = createSlice({
 
     // Append paginated images to events
     appendImages: (state, action) => {
-      const { albumName, eventName, images, total } = action.payload;
+      const { albumName, eventName, eventDate, images, total } = action.payload;
       const album = state.albums.find(a => a.name === albumName);
       if (!album) return;
 
@@ -58,7 +58,7 @@ const albumsSlice = createSlice({
         // create new event if not exists
         album.data.push({
           event: eventName,
-          date: new Date().toISOString(),
+          date: eventDate,
           images: images || [],
           loaded: images?.length || 0,
           total: total || (images?.length || 0),
