@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {loadRazorpay} from "../utils/loadRazorpay.js";
 import { fetchUser } from "../utils/fetchUser.js"
+import Usernav from "../components/usernav.jsx";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -18,8 +19,8 @@ export default function Payment() {
 
   useEffect(() => {
     // Redirect immediately if Free plan
+    fetchUser(token, dispatch)
     if (plan.toLowerCase() === "free") {
-      fetchUser(token, dispatch)
       navigate("/dashboard");
     }
   }, []);
@@ -100,7 +101,8 @@ export default function Payment() {
     }
   };
 
-  return (
+  return (<>
+  <Usernav />
     <div className="flex flex-col min-h-screen items-center justify-center bg-[#fdf6ee] px-4">
       <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-md text-center">
         <h2 className="text-2xl font-semibold text-[#4a3627] mb-4">
@@ -121,5 +123,6 @@ export default function Payment() {
         </button>
       </div>
     </div>
+    </>
   );
 }
