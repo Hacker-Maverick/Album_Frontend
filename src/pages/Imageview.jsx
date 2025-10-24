@@ -128,7 +128,7 @@ export default function ViewMedia() {
     /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(fileName);
   const curEventName = eventName || cur.event || albumName || "Untitled";
   const headerMonthYear = eventDate
-    ? new Date(eventDate).toLocaleString(undefined, { month: "long", year: "numeric" })
+    ? new Date(eventDate).toLocaleString(undefined, {day:"numeric", month: "long", year: "numeric" })
     : "";
 
   // ✅ Keyboard controls

@@ -170,6 +170,7 @@ export default function UploadPage() {
         throw new Error(completeData.message || "Upload complete failed");
 
       alert("Upload completed successfully!");
+      window.location.reload();
 
       // Reset form
       setFiles([]);

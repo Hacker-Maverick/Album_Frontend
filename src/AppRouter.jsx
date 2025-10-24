@@ -32,9 +32,6 @@ export default function AppRouter() {
         <Route path="/request" element={<RequestsPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/profile" element={<Profile />} />
-
-        {/* <Route path="" element={<Profile />} />
-        <Route path="" element={<AlbumDetail />} /> */}
       </Routes>
     </BrowserRouter>
   )

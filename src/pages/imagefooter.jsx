@@ -13,6 +13,7 @@ import {
 import TagShare from "../components/TagShare";
 import { deleteImages } from "../utils/deleteImages";
 import { editImages } from "../utils/editImages";
+import { store } from "../../store";
 
 export default function ImageFooter({
   albumId,
@@ -50,6 +51,14 @@ export default function ImageFooter({
   const [deleteChoiceOpen, setDeleteChoiceOpen] = useState(false);
   const [permConfirmOpen, setPermConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editModal, setEditModal] = useState({
+    open: false,
+    albumId: null,
+    imageIds: [],
+    eventName: "",
+    eventDate: "",
+  });
+
 
   // --- helper to update session state properly ---
   const updateImageViewState = (removedId, images, setCurrentIndex) => {
@@ -120,7 +129,7 @@ export default function ImageFooter({
   const confirmCopy = async () => {
     if (!copySelection.length) return setCopyOpen(false);
     await editImages({
-      albumIds: Array.from(new Set([ ...copySelection])),
+      albumIds: Array.from(new Set([...copySelection])),
       imageIds: [imageId],
       event: eventName,
       date: eventDate,
@@ -144,6 +153,20 @@ export default function ImageFooter({
     }
   };
 
+  const handleChangeEventDate = () => {
+    const ids = Array.from(selectedImages);
+    if (!ids.length) return;
+
+    setEditModal({
+      open: true,
+      albumId,
+      imageIds: ids,
+      eventName: currentAlbum?.data?.[0]?.event || "",
+      eventDate: currentAlbum?.data?.[0]?.date || "",
+    });
+  };
+
+
   // --- main render ---
   return (
     <footer className="border-t border-[#2A2320] px-3 sm:px-4 md:px-6 py-3 bg-[#171312]">
@@ -153,8 +176,12 @@ export default function ImageFooter({
         <TooltipButton icon={<Share2 className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5" />} label="Share" onClick={handleShare} />
         <TooltipButton icon={<Tag className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5" />} label="Tag Someone" onClick={() => setTagOpen(true)} />
         <TooltipButton icon={<Pencil className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5" />} label="Change Event/Date" onClick={() =>
-          navigate("/edit", {
-            state: { imageId, albumId, albumIds: [albumId], imageIds: [imageId], eventName, eventDate },
+          setEditModal({
+            open: true,
+            albumId,
+            imageIds: [imageId],
+            eventName,
+            eventDate,
           })
         } />
 
@@ -196,6 +223,100 @@ export default function ImageFooter({
           <TagShare imageIds={[imageId]} onClose={() => setTagOpen(false)} />
         </ModalOverlay>
       )}
+
+      {editModal.open && (
+        <ModalOverlay>
+          <div className="bg-white rounded-xl w-[420px] max-w-[90vw] p-5 shadow-xl">
+            <h2 className="text-lg font-semibold mb-3">Edit Event Details</h2>
+            <p className="text-sm text-gray-700 mb-3">
+              Update the event name and date for selected images.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              {/* Event input showing previous value in light tone */}
+              <input
+                type="text"
+                defaultValue={editModal.eventName}
+                onChange={(e) =>
+                  setEditModal((prev) => ({ ...prev, eventName: e.target.value }))
+                }
+                className="border rounded px-3 py-2 text-sm w-full text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-[#C9A97C]"
+                placeholder="Enter new event name"
+              />
+
+              {/* Date input showing previous value in light tone */}
+              <input
+                type="date"
+                defaultValue={editModal.eventDate}
+                onChange={(e) =>
+                  setEditModal((prev) => ({ ...prev, eventDate: e.target.value }))
+                }
+                className="border rounded px-3 py-2 text-sm w-full text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-[#C9A97C]"
+              />
+            </div>
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                className="px-3 py-2 rounded border hover:bg-gray-100"
+                onClick={() => setEditModal({ open: false })}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-3 py-2 rounded bg-[#C9A97C] text-black hover:bg-[#e1bf8a]"
+                onClick={async () => {
+                  const { albumId, imageIds, eventName, eventDate } = editModal;
+                  const event = eventName?.trim() || editModal.eventName;
+                  const date = eventDate?.trim() || editModal.eventDate;
+
+                  if (!event || !date) {
+                    alert("Please fill both fields.");
+                    return;
+                  }
+
+                  try {
+                    // ✅ Get token from Redux store
+                    const state = store.getState();
+                    const token = state.user?.token;
+                    if (!token) {
+                      alert("Unauthorized. Please log in again.");
+                      return;
+                    }
+
+                    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/edit`, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`, // ✅ token added
+                      },
+                      body: JSON.stringify({
+                        albumIds: [albumId],
+                        imageIds,
+                        event,
+                        date,
+                      }),
+                    });
+
+                    const data = await res.json();
+                    if (res.ok) {
+                      alert("✅ Event updated successfully!");
+                      window.location.reload();
+                    } else {
+                      alert("❌ Failed: " + (data?.message || "Unknown error"));
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    alert("❌ Server error");
+                  }
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </ModalOverlay>
+      )}
+
 
       {/* Delete Choice */}
       {deleteChoiceOpen && (
@@ -248,11 +369,10 @@ const TooltipButton = ({ icon, onClick, label, danger }) => (
   <div className="relative group flex items-center justify-center">
     <button
       onClick={onClick}
-      className={`h-9 w-9 sm:h-9 sm:w-9 md:h-10 md:w-10 flex items-center justify-center rounded-full shadow-md transition-all ${
-        danger
+      className={`h-9 w-9 sm:h-9 sm:w-9 md:h-10 md:w-10 flex items-center justify-center rounded-full shadow-md transition-all ${danger
           ? "bg-[#2A1818] hover:bg-[#3A1E1E] text-[#FF6B6B]"
           : "bg-[#201B19] hover:bg-[#2A2421] text-[#EDEAE6]"
-      }`}
+        }`}
     >
       {icon}
     </button>
@@ -282,11 +402,10 @@ const DropdownButton = ({ icon, label, open, setOpen, list, onSelect, currentId 
           <li
             key={alb.id}
             onClick={() => onSelect(alb.id)}
-            className={`px-3 py-2 flex justify-between items-center hover:bg-[#2A2421] cursor-pointer ${
-              alb.id === String(currentId)
+            className={`px-3 py-2 flex justify-between items-center hover:bg-[#2A2421] cursor-pointer ${alb.id === String(currentId)
                 ? "text-[#C9A97C] bg-[#C9A97C]/20"
                 : "text-[#EDEAE6]"
-            }`}
+              }`}
           >
             <span>{alb.name}</span>
             {alb.id === String(currentId) && <CheckCircle size={14} />}
@@ -316,11 +435,10 @@ const DropdownCheckboxButton = ({
           {list.map((alb) => (
             <li
               key={alb.id}
-              className={`px-2 py-2 flex justify-between items-center rounded hover:bg-[#2A2421] cursor-pointer ${
-                alb.id === String(currentId)
+              className={`px-2 py-2 flex justify-between items-center rounded hover:bg-[#2A2421] cursor-pointer ${alb.id === String(currentId)
                   ? "text-[#C9A97C] bg-[#C9A97C]/20"
                   : "text-[#EDEAE6]"
-              }`}
+                }`}
               onClick={() => toggle(alb.id)}
             >
               <span>{alb.name}</span>

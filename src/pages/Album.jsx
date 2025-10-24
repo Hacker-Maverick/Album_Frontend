@@ -22,6 +22,7 @@ export default function AlbumGallery() {
   const navigate = useNavigate();
   const location = useLocation();
   const isHiddenView = location.pathname.includes("/dashboard/hidden");
+  const openHidden = location.state?.openHidden || false;
 
   // responsive batch size
   const getColumns = () => {
@@ -40,53 +41,64 @@ export default function AlbumGallery() {
   }, []);
 
   // load album list
-useEffect(() => {
-  if (!user) {
-    setAlbumOptions([]);
-    setSelectedAlbum(null);
-    return;
-  }
+  useEffect(() => {
+    if (!user) {
+      setAlbumOptions([]);
+      setSelectedAlbum(null);
+      return;
+    }
 
-  if (isHiddenView) {
-    const hiddenGroup = user.groups?.find(
-      (g) => g.groupName?.toLowerCase() === "hidden"
-    );
-    if (hiddenGroup?.albumId) {
-      setSelectedAlbum({
-        id: hiddenGroup.albumId,
-        name: hiddenGroup.groupName || "Hidden Album",
+    if (isHiddenView) {
+      if (!openHidden) {
+        setTimeout(() => {
+          navigate("/dashboard", { replace: true });
+        }, 0);
+        return;
+      }
+
+      const hiddenGroup = user.groups?.find(
+        (g) => g.groupName?.toLowerCase() === "hidden"
+      );
+      if (hiddenGroup?.albumId) {
+        setSelectedAlbum({
+          id: hiddenGroup.albumId,
+          name: hiddenGroup.groupName || "Hidden Album",
+        });
+
+        // 🧹 Optional: clear state so reloads don’t re-open automatically
+        navigate("/dashboard/hidden", { replace: true, state: {} });
+      }
+      return;
+    }
+
+
+    // 🧠 If we’re here, we’re NOT on hidden route anymore
+    // Reset selection to main album if the previous one was "Hidden Album"
+    if (selectedAlbum?.name?.toLowerCase() === "hidden") {
+      const mainAlbum = user.main_album
+        ? { id: String(user.main_album), name: "Main Album" }
+        : null;
+      if (mainAlbum) setSelectedAlbum(mainAlbum);
+    }
+
+    // 🧱 Normal album listing
+    const opts = [];
+    if (user.main_album)
+      opts.push({ id: String(user.main_album), name: "Main Album" });
+    if (Array.isArray(user.groups)) {
+      user.groups.forEach((g) => {
+        if (g.albumId)
+          opts.push({
+            id: String(g.albumId),
+            name: g.groupName || `Album-${g.albumId}`,
+          });
       });
     }
-    return; // ✅ stop here when hidden is open
-  }
+    setAlbumOptions(opts);
 
-  // 🧠 If we’re here, we’re NOT on hidden route anymore
-  // Reset selection to main album if the previous one was "Hidden Album"
-  if (selectedAlbum?.name?.toLowerCase() === "hidden") {
-    const mainAlbum = user.main_album
-      ? { id: String(user.main_album), name: "Main Album" }
-      : null;
-    if (mainAlbum) setSelectedAlbum(mainAlbum);
-  }
-
-  // 🧱 Normal album listing
-  const opts = [];
-  if (user.main_album)
-    opts.push({ id: String(user.main_album), name: "Main Album" });
-  if (Array.isArray(user.groups)) {
-    user.groups.forEach((g) => {
-      if (g.albumId)
-        opts.push({
-          id: String(g.albumId),
-          name: g.groupName || `Album-${g.albumId}`,
-        });
-    });
-  }
-  setAlbumOptions(opts);
-
-  // 🧩 Auto-select main if none selected
-  if (!selectedAlbum && opts.length) setSelectedAlbum(opts[0]);
-}, [user, location.pathname]);
+    // 🧩 Auto-select main if none selected
+    if (!selectedAlbum && opts.length) setSelectedAlbum(opts[0]);
+  }, [user, location.pathname]);
 
 
   useEffect(() => {
@@ -104,7 +116,7 @@ useEffect(() => {
       const date = new Date(y, m - 1, day);
       return date.toLocaleDateString(undefined, {
         day: "numeric",
-        month: "long",
+        month: "short",
         year: "numeric",
       });
     }
@@ -112,7 +124,7 @@ useEffect(() => {
     if (Number.isNaN(date.getTime())) return "";
     return date.toLocaleDateString(undefined, {
       day: "numeric",
-      month: "long",
+      month: "short",
       year: "numeric",
     });
   };
@@ -215,9 +227,8 @@ useEffect(() => {
             alt={alt}
             onLoad={() => setLoaded(true)}
             onError={() => setLoaded(true)}
-            className={`w-full h-full object-cover transition-opacity duration-300 ${
-              loaded ? "opacity-100" : "opacity-0"
-            }`}
+            className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"
+              }`}
           />
         )}
       </div>
@@ -242,7 +253,8 @@ useEffect(() => {
       const data = await res.json().catch(() => ({}));
       alert(data.message || "Album created successfully.");
       if (res.ok) {
-        window.location.reload();}
+        window.location.reload();
+      }
     } catch (e) {
       console.error(e);
       alert("Could not create album. Please try again.");
@@ -259,16 +271,16 @@ useEffect(() => {
               albums={
                 isHiddenView
                   ? (() => {
-                      const hiddenGroup = user?.groups?.find(
-                        (g) => g.groupName?.toLowerCase() === "hidden"
-                      );
-                      return hiddenGroup?.albumId
-                        ? [{ id: hiddenGroup.albumId, name: "Hidden Album" }]
-                        : [];
-                    })()
+                    const hiddenGroup = user?.groups?.find(
+                      (g) => g.groupName?.toLowerCase() === "hidden"
+                    );
+                    return hiddenGroup?.albumId
+                      ? [{ id: hiddenGroup.albumId, name: "Hidden Album" }]
+                      : [];
+                  })()
                   : albumOptions.filter(
-                      (opt) => opt.name.toLowerCase() !== "hidden"
-                    )
+                    (opt) => opt.name.toLowerCase() !== "hidden"
+                  )
               }
               selectedAlbum={selectedAlbum}
               setSelectedAlbum={(album) => {
@@ -403,11 +415,10 @@ useEffect(() => {
                             setSelectionMode(true);
                             toggleImageSelection(idKey);
                           }}
-                          className={`aspect-square rounded-lg relative cursor-pointer border-2 ${
-                            isSelected
+                          className={`aspect-square rounded-lg relative cursor-pointer border-2 ${isSelected
                               ? "border-[#C9A97C] ring-2 ring-[#C9A97C]"
                               : "border-transparent"
-                          }`}
+                            }`}
                         >
                           <Thumbnail src={thumb} alt={`${ev.event}-${i}`} />
                           {isSelected && (
