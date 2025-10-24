@@ -238,6 +238,10 @@ export default function AlbumGallery() {
   const handleCreateAlbum = async () => {
     const albumName = prompt("Enter new album name");
     if (!albumName || !albumName.trim()) return;
+    if(albumName=="Hidden" || albumName=="hidden" || albumName=="HIDDEN" || albumName=="Hidden Folder" || albumName=="hidden folder" || albumName=="HIDDEN FOLDER"){
+      alert("Album name 'Hidden' is reserved. Please choose a different name.");
+      return;
+    }
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/makegroup`,
