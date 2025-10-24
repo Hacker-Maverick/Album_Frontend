@@ -130,6 +130,8 @@ export default function RequestsPage() {
 
       alert("Images accepted successfully!");
 
+      window.location.reload();
+
       const updated = [...requests];
       updated.splice(selectedRequestIndex, 1);
       setRequests(updated);

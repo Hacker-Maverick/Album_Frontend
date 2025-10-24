@@ -12,6 +12,7 @@ import ImageViewPage from "./pages/Imageview"
 import RequestsPage from "./pages/Request"
 import ForgotPassword from "./pages/ForgotPassword"
 import Profile from "./pages/Profile"
+import Friends from "./pages/Friends"
 
 
 export default function AppRouter() {
@@ -32,6 +33,7 @@ export default function AppRouter() {
         <Route path="/request" element={<RequestsPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/friends" element={<Friends />} />
       </Routes>
     </BrowserRouter>
   )
