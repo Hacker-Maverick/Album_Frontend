@@ -40,6 +40,7 @@ export default function Nav() {
       "You don't have a Hidden Album yet.\nWould you like to create one now?"
     );
     if (!confirmCreate) return;
+    if (!user) return;
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/makegroup`, {

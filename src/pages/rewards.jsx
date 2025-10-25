@@ -1,7 +1,7 @@
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { Copy } from "lucide-react";
-import Usernav from "../components/Usernav";
+import Usernav from "../components/usernav";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -63,7 +63,7 @@ Redeem your credits later for storage upgrades or premium features!`;
       <div className="w-full max-w-4xl">
         {/* Header */}
         <h1 className="text-3xl font-bold text-center text-[#4a3627] mb-2">
-          Credits & Rewards
+          Referal & Rewards
         </h1>
         <p className="text-center text-[#6e5542] mb-8">
           Redeem your credits for plans and share with friends to earn more.

@@ -14,6 +14,7 @@ import ForgotPassword from "./pages/ForgotPassword"
 import Profile from "./pages/Profile"
 import Friends from "./pages/Friends"
 import CreditsRewards from "./pages/rewards"
+import VerifyEmail from "./pages/verifyMail"
 
 
 export default function AppRouter() {
@@ -36,6 +37,7 @@ export default function AppRouter() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/friends" element={<Friends />} />
         <Route path="/rewards" element={<CreditsRewards />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
       </Routes>
     </BrowserRouter>
   )

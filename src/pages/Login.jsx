@@ -34,8 +34,9 @@ export default function Login() {
 
       dispatch(setUser({ user: { email: data.email }, token: data.token }))
       localStorage.setItem("album_jwt_token", data.token);
-      fetchUser(data.token, dispatch)
-      navigate("/dashboard")
+      let verified = await fetchUser(data.token, dispatch)
+      if(verified) navigate("/dashboard")
+      else navigate("/verify-email")
     } catch (err) {
       alert(err.message || "Login failed")
     }

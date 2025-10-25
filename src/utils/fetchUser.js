@@ -19,12 +19,13 @@ export async function fetchUser() {
       },
     });
 
-    if (!res.ok) throw new Error("Failed to fetch user data");
-
     const data = await res.json();
+    if (!res.ok) throw new Error("Failed to fetch user data");
 
     // update user in redux but keep token as it is
     store.dispatch(setUser({ user: data, token }));
+    return data;
+    
   } catch (err) {
     console.error("Error fetching user:", err.message);
   }

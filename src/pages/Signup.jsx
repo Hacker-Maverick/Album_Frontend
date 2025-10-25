@@ -64,13 +64,7 @@ export default function Signup() {
       dispatch(setUser({ user: { email: data.email }, token: data.token }));
       localStorage.setItem("album_jwt_token", data.token);
 
-      // ✅ Redirect to payment if not free plan
-      if (form.plan.toLowerCase() === "free") {
-        await fetchUser(data.token, dispatch);
-        navigate("/dashboard");
-      } else {
-        navigate("/payment", { state: { plan: form.plan } });
-      }
+      navigate("/verify-email", { state: { plan: form.plan  } });
     } catch (err) {
       setError(err.message);
     } finally {
