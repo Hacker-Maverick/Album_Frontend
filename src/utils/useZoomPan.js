@@ -167,7 +167,12 @@ export function useZoomPan({ onSwipeLeft, onSwipeRight } = {}) {
         const dy = t1.clientY - t2.clientY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         const mid = getMidpoint(t1, t2);
-        const scale = distance / pinchRef.current.startDistance;
+
+        const PINCH_SENSITIVITY = 0.25; // lower = less sensitive (0.15–0.3 is ideal)
+
+        const rawScale = distance / pinchRef.current.startDistance;
+        const scale = 1 + (rawScale - 1) * PINCH_SENSITIVITY;
+
         const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pinchRef.current.startZoom * scale));
         const zoomRatio = newZoom / pinchRef.current.startZoom;
         const newPan = {

@@ -62,6 +62,15 @@ export default function Select({
     eventDate: "",
   });
 
+  const findEventOfImage = (imageId) => {
+    for (const ev of currentAlbum?.data || []) {
+      if (ev.images?.some(img => String(img._id || img.id) === String(imageId))) {
+        return ev;
+      }
+    }
+    return null;
+  };
+
 
   /* ---------------- SELECTION LOGIC ---------------- */
   const totalImages =
@@ -142,12 +151,14 @@ export default function Select({
     const ids = Array.from(selectedImages);
     if (!ids.length) return;
 
+    const event = findEventOfImage(ids[0]);
+
     setEditModal({
       open: true,
       albumId,
       imageIds: ids,
-      eventName: currentAlbum?.data?.[0]?.event || "",
-      eventDate: currentAlbum?.data?.[0]?.date || "",
+      eventName: event?.event || "",
+      eventDate: event?.date ? new Date(event.date).toISOString().slice(0, 10) : "",
     });
   };
 
@@ -177,6 +188,8 @@ export default function Select({
       alert("Please enter both event name and date.");
       return;
     }
+
+    const event = findEventOfImage(ids[0]);
 
     try {
       await editImages({
@@ -369,98 +382,98 @@ export default function Select({
         </ModalOverlay>
       )}
 
-{editModal.open && (
-  <ModalOverlay>
-    <div className="bg-white rounded-xl w-[420px] max-w-[90vw] p-5 shadow-xl">
-      <h2 className="text-lg font-semibold mb-3">Edit Event Details</h2>
-      <p className="text-sm text-gray-700 mb-3">
-        Update the event name and date for selected images.
-      </p>
+      {editModal.open && (
+        <ModalOverlay>
+          <div className="bg-white rounded-xl w-[420px] max-w-[90vw] p-5 shadow-xl">
+            <h2 className="text-lg font-semibold mb-3">Edit Event Details</h2>
+            <p className="text-sm text-gray-700 mb-3">
+              Update the event name and date for selected images.
+            </p>
 
-      <div className="flex flex-col gap-3">
-        {/* Event input showing previous value in light tone */}
-        <input
-          type="text"
-          defaultValue={editModal.eventName}
-          onChange={(e) =>
-            setEditModal((prev) => ({ ...prev, eventName: e.target.value }))
-          }
-          className="border rounded px-3 py-2 text-sm w-full text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-[#C9A97C]"
-          placeholder="Enter new event name"
-        />
+            <div className="flex flex-col gap-3">
+              {/* Event input showing previous value in light tone */}
+              <input
+                type="text"
+                defaultValue={editModal.eventName}
+                onChange={(e) =>
+                  setEditModal((prev) => ({ ...prev, eventName: e.target.value }))
+                }
+                className="border rounded px-3 py-2 text-sm w-full text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-[#C9A97C]"
+                placeholder="Enter new event name"
+              />
 
-        {/* Date input showing previous value in light tone */}
-        <input
-          type="date"
-          defaultValue={editModal.eventDate}
-          onChange={(e) =>
-            setEditModal((prev) => ({ ...prev, eventDate: e.target.value }))
-          }
-          className="border rounded px-3 py-2 text-sm w-full text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-[#C9A97C]"
-        />
-      </div>
+              {/* Date input showing previous value in light tone */}
+              <input
+                type="date"
+                defaultValue={editModal.eventDate}
+                onChange={(e) =>
+                  setEditModal((prev) => ({ ...prev, eventDate: e.target.value }))
+                }
+                className="border rounded px-3 py-2 text-sm w-full text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-[#C9A97C]"
+              />
+            </div>
 
-      <div className="mt-4 flex justify-end gap-2">
-        <button
-          className="px-3 py-2 rounded border hover:bg-gray-100"
-          onClick={() => setEditModal({ open: false })}
-        >
-          Cancel
-        </button>
-        <button
-          className="px-3 py-2 rounded bg-[#C9A97C] text-black hover:bg-[#e1bf8a]"
-          onClick={async () => {
-            const { albumId, imageIds, eventName, eventDate } = editModal;
-            const event = eventName?.trim() || editModal.eventName;
-            const date = eventDate?.trim() || editModal.eventDate;
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                className="px-3 py-2 rounded border hover:bg-gray-100"
+                onClick={() => setEditModal({ open: false })}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-3 py-2 rounded bg-[#C9A97C] text-black hover:bg-[#e1bf8a]"
+                onClick={async () => {
+                  const { albumId, imageIds, eventName, eventDate } = editModal;
+                  const event = eventName?.trim() || editModal.eventName;
+                  const date = eventDate?.trim() || editModal.eventDate;
 
-            if (!event || !date) {
-              alert("Please fill both fields.");
-              return;
-            }
+                  if (!event || !date) {
+                    alert("Please fill both fields.");
+                    return;
+                  }
 
-            try {
-              // ✅ Get token from Redux store
-              const state = store.getState();
-              const token = state.user?.token;
-              if (!token) {
-                alert("Unauthorized. Please log in again.");
-                return;
-              }
+                  try {
+                    // ✅ Get token from Redux store
+                    const state = store.getState();
+                    const token = state.user?.token;
+                    if (!token) {
+                      alert("Unauthorized. Please log in again.");
+                      return;
+                    }
 
-              const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/edit`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`, // ✅ token added
-                },
-                body: JSON.stringify({
-                  albumIds: [albumId],
-                  imageIds,
-                  event,
-                  date,
-                }),
-              });
+                    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/edit`, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`, // ✅ token added
+                      },
+                      body: JSON.stringify({
+                        albumIds: [albumId],
+                        imageIds,
+                        event,
+                        date,
+                      }),
+                    });
 
-              const data = await res.json();
-              if (res.ok) {
-                alert("✅ Event updated successfully!");
-                window.location.reload();
-              } else {
-                alert("❌ Failed: " + (data?.message || "Unknown error"));
-              }
-            } catch (err) {
-              console.error(err);
-              alert("❌ Server error");
-            }
-          }}
-        >
-          Confirm
-        </button>
-      </div>
-    </div>
-  </ModalOverlay>
-)}
+                    const data = await res.json();
+                    if (res.ok) {
+                      alert("✅ Event updated successfully!");
+                      window.location.reload();
+                    } else {
+                      alert("❌ Failed: " + (data?.message || "Unknown error"));
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    alert("❌ Server error");
+                  }
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </ModalOverlay>
+      )}
 
 
 
@@ -486,7 +499,7 @@ export default function Select({
                 onClick={() => deleteFromAlbum(false)}
                 disabled={deleting}
               >
-                {deleting ? "Deleting…" : "Delete"}
+                {deleting ? "Deleting…" : "Delete here"}
               </button>
               <button
                 className="px-3 py-2 rounded bg-red-500 text-white hover:bg-red-600"
@@ -495,7 +508,7 @@ export default function Select({
                   setPermConfirmOpen(true);
                 }}
               >
-                Delete Permanently
+                Delete Global
               </button>
             </div>
           </div>

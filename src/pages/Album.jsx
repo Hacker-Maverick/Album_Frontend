@@ -23,6 +23,10 @@ export default function AlbumGallery() {
   const location = useLocation();
   const isHiddenView = location.pathname.includes("/dashboard/hidden");
   const openHidden = location.state?.openHidden || false;
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newAlbumName, setNewAlbumName] = useState("");
+  const [createError, setCreateError] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
   // responsive batch size
   const getColumns = () => {
@@ -96,7 +100,17 @@ export default function AlbumGallery() {
     }
     setAlbumOptions(opts);
 
+    // Select from localStorage if possible
+    const storedAlbumName = localStorage.getItem("selectedAlbum");
+    const storedAlbum = opts.find((a) => a.name === storedAlbumName);
+    if (!selectedAlbum && storedAlbum) {
+      console.log("Restoring selected album from localStorage:", storedAlbum);
+      setSelectedAlbum(storedAlbum);
+      return;
+    }
+
     // 🧩 Auto-select main if none selected
+    console.log("Auto-selecting album:");
     if (!selectedAlbum && opts.length) setSelectedAlbum(opts[0]);
   }, [user, location.pathname]);
 
@@ -108,6 +122,21 @@ export default function AlbumGallery() {
   const getAlbumFromSlice = (albumName) =>
     albumsSlice.find((a) => a.name === albumName) || null;
 
+  //album selected change resets
+  useEffect(() => {
+    if (selectedAlbum) {
+      localStorage.setItem("selectedAlbum", selectedAlbum ? selectedAlbum.name : "");
+    }
+  }, [selectedAlbum]);
+
+  //select mode
+  useEffect(() => {
+    if (selectedImages.size == 0) {
+      setSelectionMode(false);
+    }
+  }, [selectedImages]);
+
+  // format event date
   const formatEventDate = (d) => {
     if (!d) return "";
     const s = typeof d === "string" ? d : String(d);
@@ -235,36 +264,54 @@ export default function AlbumGallery() {
     );
   };
 
-  const handleCreateAlbum = async () => {
-    const albumName = prompt("Enter new album name");
-    if (!albumName || !albumName.trim()) return;
-    if (!user) return;
-    if(albumName=="Hidden" || albumName=="hidden" || albumName=="HIDDEN" || albumName=="Hidden Folder" || albumName=="hidden folder" || albumName=="HIDDEN FOLDER"){
-      alert("Album name 'Hidden' is reserved. Please choose a different name.");
+  // submit new album from modal
+  const submitCreateAlbum = async () => {
+    const name = (newAlbumName || "").trim();
+    if (!name) {
+      setCreateError("Please enter a name.");
       return;
     }
+
+    // reserved name checks (same as before)
+    if (
+      ["hidden", "hidden folder", "hidden album"].includes(name.toLowerCase())
+    ) {
+      setCreateError("Album name 'Hidden' is reserved. Please choose a different name.");
+      return;
+    }
+
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/makegroup`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ albumType: "group", albumName: albumName.trim() }),
-        }
-      );
+      setIsCreating(true);
+      setCreateError("");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/makegroup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ albumType: "group", albumName: name }),
+      });
+
       const data = await res.json().catch(() => ({}));
-      alert(data.message || "Album created successfully.");
-      if (res.ok) {
-        window.location.reload();
+      if (!res.ok) {
+        throw new Error(data.message || "Could not create album");
       }
-    } catch (e) {
-      console.error(e);
-      alert("Could not create album. Please try again.");
+
+      // success — close modal and refresh album list (simple)
+      setShowCreateModal(false);
+      setNewAlbumName("");
+      // optionally show message
+      alert(data.message || "Album created successfully.");
+      // refresh page or re-run album loader:
+      window.location.reload();
+    } catch (err) {
+      console.error("Create album error:", err);
+      setCreateError(err.message || "Failed to create album.");
+    } finally {
+      setIsCreating(false);
     }
   };
+
   return (
     <>
       <Usernav />
@@ -302,13 +349,18 @@ export default function AlbumGallery() {
 
             {!isHiddenView && (
               <button
-                onClick={handleCreateAlbum}
+                onClick={() => {
+                  setNewAlbumName("");
+                  setCreateError("");
+                  setShowCreateModal(true);
+                }}
                 className="flex items-center gap-2 px-3 py-2 rounded-full border border-[#e3d6c5] bg-white text-sm font-medium text-[#a0522d] hover:bg-[#f8f1ea] hover:border-[#d4b693] transition-colors shadow-sm"
               >
                 <span className="text-lg leading-none font-bold">+</span>
                 <span className="hidden sm:inline">Create album</span>
               </button>
             )}
+
           </div>
 
           {selectedAlbum && currentAlbum && (
@@ -322,6 +374,63 @@ export default function AlbumGallery() {
             />
           )}
         </div>
+
+        {/* Create Album Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            {/* backdrop */}
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => {
+                if (!isCreating) {
+                  setShowCreateModal(false);
+                  setCreateError("");
+                }
+              }}
+            />
+            {/* card */}
+            <div className="relative w-full max-w-md bg-white rounded-xl border border-[#e9e1d6] shadow-xl p-5 z-10">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Create Album</h3>
+              <p className="text-sm text-gray-500 mb-4">Enter a name for your new album.</p>
+
+              <input
+                type="text"
+                value={newAlbumName}
+                onChange={(e) => setNewAlbumName(e.target.value)}
+                disabled={isCreating}
+                className="w-full border border-[#d4bba4] rounded-md p-2 mb-2"
+                placeholder="Album name"
+              />
+              {createError && (
+                <div className="text-xs text-red-600 mb-2">{createError}</div>
+              )}
+
+              <div className="flex justify-end gap-2 mt-3">
+                <button
+                  onClick={() => {
+                    if (!isCreating) {
+                      setShowCreateModal(false);
+                      setCreateError("");
+                    }
+                  }}
+                  className="px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-100 text-sm"
+                  disabled={isCreating}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={submitCreateAlbum}
+                  className="px-3 py-2 rounded-md bg-[#8b5e3c] text-white hover:bg-[#70492c] text-sm"
+                  disabled={isCreating}
+                >
+                  {isCreating ? "Creating..." : "Create"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {/* image grid */}
         {selectedAlbum && currentAlbum && currentAlbum.data?.length > 0 ? (
@@ -354,16 +463,16 @@ export default function AlbumGallery() {
 
               return (
                 <section
-                  key={`${ev.event}-${idx}`}
+                  key={`${ev.event}-${ev.date}-${idx}`}
                   className="bg-white rounded-2xl p-4 sm:p-5 shadow-md border border-[#f0e7dd]"
                 >
                   {/* header row */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
+                  <div className="flex flex-row items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold text-gray-800">
                       {ev.event}
                     </h3>
 
-                    <div className="flex items-center gap-3 mt-2 sm:mt-0">
+                    <div className="flex items-center">
                       <div className="text-sm text-gray-500">
                         {formatEventDate(ev.date)}
                       </div>
@@ -421,8 +530,8 @@ export default function AlbumGallery() {
                             toggleImageSelection(idKey);
                           }}
                           className={`aspect-square rounded-lg relative cursor-pointer border-2 ${isSelected
-                              ? "border-[#C9A97C] ring-2 ring-[#C9A97C]"
-                              : "border-transparent"
+                            ? "border-[#C9A97C] ring-2 ring-[#C9A97C]"
+                            : "border-transparent"
                             }`}
                         >
                           <Thumbnail src={thumb} alt={`${ev.event}-${i}`} />

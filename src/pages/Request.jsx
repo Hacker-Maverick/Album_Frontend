@@ -1,5 +1,5 @@
 // src/pages/RequestsPage.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import UserNav from "../components/usernav.jsx";
@@ -21,10 +21,11 @@ export default function RequestsPage() {
   // accept modal state
   const [popupOpen, setPopupOpen] = useState(false);
   const [eventName, setEventName] = useState("");
-  const [eventDate, setEventDate] = useState("");
+  const [eventDate, setEventDate] = useState(new Date().toISOString().slice(0, 10));
   const [selectedAlbums, setSelectedAlbums] = useState([]);
   const [tagees, setTagees] = useState([]);
   const [tagInput, setTagInput] = useState("");
+  const suggestBoxRef = useRef(null);
 
   // Build album list from user (Main + Groups)
   const albums = useMemo(() => {
@@ -100,6 +101,30 @@ export default function RequestsPage() {
     setPopupOpen(true);
   };
 
+  const handleSmartAccept = (req, i) => {
+    // If no images selected → treat as Accept All
+    const hasSelection =
+      selectedRequestIndex === i && selectedImages.length > 0;
+
+    let imagesToAccept = hasSelection
+      ? selectedImages
+      : req.images.map((img) => img.id);
+
+    if (!imagesToAccept.length) {
+      alert("No images in this request.");
+      return;
+    }
+
+    // Pre-fill selectedImages for UI consistency
+    setSelectedImages(imagesToAccept);
+    setSelectedRequestIndex(i);
+
+    // Now open modal using the IDs directly (no async issue)
+    setPopupOpen(true);
+  };
+
+
+
   const handleAccept = async () => {
     if (!selectedImages.length)
       return alert("Select at least one image to accept");
@@ -126,7 +151,7 @@ export default function RequestsPage() {
       });
 
       const resjson = await res.json();
-      if (!res.ok) throw new Error(resjson.message||"Failed to accept images");
+      if (!res.ok) throw new Error(resjson.message || "Failed to accept images");
 
       alert("Images accepted successfully!");
 
@@ -174,26 +199,38 @@ export default function RequestsPage() {
     }
   };
 
-  // album add/remove
-  const addAlbum = (albumId) => {
-    if (albumId && !selectedAlbums.includes(albumId)) {
-      setSelectedAlbums((prev) => [...prev, albumId]);
-    }
-  };
-  const removeAlbum = (albumId) => {
-    setSelectedAlbums((prev) => prev.filter((x) => x !== albumId));
-  };
+  //close tag suggest box on outside click
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (!suggestBoxRef.current) return;
+      if (!suggestBoxRef.current.contains(e.target)) {
+        setTagInput("");
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
 
-  // tagees add/remove
-  const addTag = (username) => {
-    if (username && !tagees.includes(username)) {
-      setTagees((prev) => [...prev, username]);
-    }
-    setTagInput("");
-  };
-  const removeTag = (username) => {
-    setTagees((prev) => prev.filter((x) => x !== username));
-  };
+  // // album add/remove
+  // const addAlbum = (albumId) => {
+  //   if (albumId && !selectedAlbums.includes(albumId)) {
+  //     setSelectedAlbums((prev) => [...prev, albumId]);
+  //   }
+  // };
+  // const removeAlbum = (albumId) => {
+  //   setSelectedAlbums((prev) => prev.filter((x) => x !== albumId));
+  // };
+
+  // // tagees add/remove
+  // const addTag = (username) => {
+  //   if (username && !tagees.includes(username)) {
+  //     setTagees((prev) => [...prev, username]);
+  //   }
+  //   setTagInput("");
+  // };
+  // const removeTag = (username) => {
+  //   setTagees((prev) => prev.filter((x) => x !== username));
+  // };
 
   if (loading) {
     return (
@@ -237,17 +274,19 @@ export default function RequestsPage() {
 
                   <div className="flex flex-wrap gap-2 sm:gap-3">
                     <button
-                      onClick={() => openAcceptModal(i)}
-                      disabled={
-                        selectedRequestIndex !== i || selectedImages.length === 0
-                      }
-                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium text-white transition ${selectedRequestIndex === i && selectedImages.length > 0
+                      onClick={() => handleSmartAccept(req, i)}
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium text-white transition ${
+                        // If user has selected images on this request → highlight button
+                        selectedRequestIndex === i && selectedImages.length > 0
                           ? "bg-[#8b5e3c] hover:bg-[#70492c]"
-                          : "bg-gray-400 cursor-not-allowed"
+                          : "bg-[#8b5e3c] hover:bg-[#70492c]"
                         }`}
                     >
-                      Accept Selected
+                      {selectedRequestIndex === i && selectedImages.length > 0
+                        ? "Accept Selected"
+                        : "Accept All"}
                     </button>
+
                     <button
                       onClick={() => handleDecline(i)}
                       className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium bg-red-600 text-white hover:bg-red-700"
@@ -288,8 +327,8 @@ export default function RequestsPage() {
                             toggleSelect(img.id);
                           }}
                           className={`absolute top-1 left-1 h-4 w-4 sm:h-5 sm:w-5 rounded border flex items-center justify-center text-[9px] sm:text-[10px] ${isSelected
-                              ? "bg-[#8b5e3c] border-[#8b5e3c] text-white"
-                              : "bg-white/90 border-gray-300 text-transparent"
+                            ? "bg-[#8b5e3c] border-[#8b5e3c] text-white"
+                            : "bg-white/90 border-gray-300 text-transparent"
                             }`}
                           title={isSelected ? "Unselect" : "Select"}
                         >
@@ -310,7 +349,7 @@ export default function RequestsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-2">
           <div className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-sm sm:max-w-md shadow-xl text-sm sm:text-base">
             <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
-              Accept Selected Images
+              Accept Images
             </h2>
 
             <input
@@ -396,28 +435,36 @@ export default function RequestsPage() {
                 className="border border-[#d4bba4] w-full p-2 rounded text-sm"
               />
               {tagInput && (
-                <div className="absolute bg-white border border-gray-200 rounded shadow-md w-full mt-1 z-10 max-h-32 overflow-y-auto">
+                <div ref={suggestBoxRef} className="absolute bg-white border border-gray-200 rounded shadow-md w-full mt-1 z-10 max-h-32 overflow-y-auto">
                   {friends
-                    .filter((f) =>
-                      f.username.toLowerCase().includes(tagInput.toLowerCase())
-                    )
+                    .filter(f => {
+                      const q = tagInput.toLowerCase();
+                      if (!f.username) return false;
+                      // exclude yourself
+                      if (f.username === user?.username) return false;
+                      return (f.username || "").toLowerCase().includes(q)
+                        || (f.nickname || "").toLowerCase().includes(q)
+                        || (f.label || "").toLowerCase().includes(q);
+                    })
                     .map((f) => (
                       <div
                         key={f.username}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           if (!tagees.includes(f.username)) {
-                            setTagees([...tagees, f.username]);
+                            setTagees((prev) => [...prev, f.username]);
                           }
                           setTagInput("");
                         }}
-                        className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                        className="p-2 hover:bg-gray-100 cursor-pointer text-sm flex w-full justify-between"
                       >
-                        {f.label || f.username}
+                        <div className="text-sm">{f.username}</div>
+                        <div className="text-xs text-gray-500">@{f.nickname || ""}</div>
                       </div>
                     ))}
                 </div>
               )}
+
               <div className="flex gap-1.5 sm:gap-2 mt-2 flex-wrap">
                 {tagees.map((username) => (
                   <span

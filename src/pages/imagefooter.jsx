@@ -136,6 +136,7 @@ export default function ImageFooter({
     });
     setCopySelection([]);
     setCopyOpen(false);
+    window.location.reload();
   };
 
   const deleteFromAlbum = async (permanent = false) => {
@@ -153,18 +154,28 @@ export default function ImageFooter({
     }
   };
 
-  const handleChangeEventDate = () => {
-    const ids = Array.from(selectedImages);
-    if (!ids.length) return;
-
-    setEditModal({
-      open: true,
-      albumId,
-      imageIds: ids,
-      eventName: currentAlbum?.data?.[0]?.event || "",
-      eventDate: currentAlbum?.data?.[0]?.date || "",
-    });
+  const confirmEventAction = async () => {
+    if (!editModal.open) return;
+    const { albumId: targetAlbumId, imageIds, eventName, eventDate } = editModal;
+    if (!imageIds?.length) {
+      setEditModal({ open: false, albumId: null, imageIds: [], eventName: "", eventDate: "" });
+      return;
+    }
+    try {
+      await editImages({
+        albumIds: [targetAlbumId],
+        imageIds,
+        event: eventName,
+        date: eventDate,
+      });
+      // simple approach: reload so everything refreshes
+      window.location.reload();
+    } catch (e) {
+      console.error("Failed to update event/date", e);
+      alert("Failed to update event/date. Please try again.");
+    }
   };
+
 
 
   // --- main render ---
@@ -181,7 +192,7 @@ export default function ImageFooter({
             albumId,
             imageIds: [imageId],
             eventName,
-            eventDate,
+            eventDate: eventDate ? new Date(eventDate).toISOString().slice(0,10) : "",
           })
         } />
 
@@ -224,98 +235,45 @@ export default function ImageFooter({
         </ModalOverlay>
       )}
 
-      {editModal.open && (
-        <ModalOverlay>
-          <div className="bg-white rounded-xl w-[420px] max-w-[90vw] p-5 shadow-xl">
-            <h2 className="text-lg font-semibold mb-3">Edit Event Details</h2>
-            <p className="text-sm text-gray-700 mb-3">
-              Update the event name and date for selected images.
-            </p>
+ {/* Edit Event/Date Modal */}
+{editModal.open && (
+  <ModalOverlay>
+    <div className="bg-white rounded-xl w-[420px] max-w-[90vw] p-5 shadow-xl">
+      <h2 className="text-lg font-semibold mb-3 text-black">Change Event / Date</h2>
+      <div className="flex flex-col gap-3">
+        <input
+          type="text"
+          placeholder="Event Name"
+          value={editModal.eventName}
+          onChange={(e) => setEditModal((m) => ({ ...m, eventName: e.target.value }))}
+          className="border rounded px-3 py-2 text-sm w-full text-black"
+        />
+        <input
+          type="date"
+          defaultValue={editModal.eventDate}
+          onChange={(e) => setEditModal((m) => ({ ...m, eventDate: e.target.value }))}
+          className="border rounded px-3 py-2 text-sm w-full text-black"
+        />
+      </div>
 
-            <div className="flex flex-col gap-3">
-              {/* Event input showing previous value in light tone */}
-              <input
-                type="text"
-                defaultValue={editModal.eventName}
-                onChange={(e) =>
-                  setEditModal((prev) => ({ ...prev, eventName: e.target.value }))
-                }
-                className="border rounded px-3 py-2 text-sm w-full text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-[#C9A97C]"
-                placeholder="Enter new event name"
-              />
+      <div className="mt-4 flex justify-end gap-2">
+        <button
+          className="px-3 py-2 rounded border hover:bg-gray-100 text-black"
+          onClick={() => setEditModal({ open: false, albumId: null, imageIds: [], eventName: "", eventDate: "" })}
+        >
+          Cancel
+        </button>
+        <button
+          className="px-3 py-2 rounded bg-[#C9A97C] text-black hover:bg-[#e1bf8a]"
+          onClick={confirmEventAction}
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  </ModalOverlay>
+)}
 
-              {/* Date input showing previous value in light tone */}
-              <input
-                type="date"
-                defaultValue={editModal.eventDate}
-                onChange={(e) =>
-                  setEditModal((prev) => ({ ...prev, eventDate: e.target.value }))
-                }
-                className="border rounded px-3 py-2 text-sm w-full text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-[#C9A97C]"
-              />
-            </div>
-
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                className="px-3 py-2 rounded border hover:bg-gray-100"
-                onClick={() => setEditModal({ open: false })}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-3 py-2 rounded bg-[#C9A97C] text-black hover:bg-[#e1bf8a]"
-                onClick={async () => {
-                  const { albumId, imageIds, eventName, eventDate } = editModal;
-                  const event = eventName?.trim() || editModal.eventName;
-                  const date = eventDate?.trim() || editModal.eventDate;
-
-                  if (!event || !date) {
-                    alert("Please fill both fields.");
-                    return;
-                  }
-
-                  try {
-                    // ✅ Get token from Redux store
-                    const state = store.getState();
-                    const token = state.user?.token;
-                    if (!token) {
-                      alert("Unauthorized. Please log in again.");
-                      return;
-                    }
-
-                    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/edit`, {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`, // ✅ token added
-                      },
-                      body: JSON.stringify({
-                        albumIds: [albumId],
-                        imageIds,
-                        event,
-                        date,
-                      }),
-                    });
-
-                    const data = await res.json();
-                    if (res.ok) {
-                      alert("✅ Event updated successfully!");
-                      window.location.reload();
-                    } else {
-                      alert("❌ Failed: " + (data?.message || "Unknown error"));
-                    }
-                  } catch (err) {
-                    console.error(err);
-                    alert("❌ Server error");
-                  }
-                }}
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </ModalOverlay>
-      )}
 
 
       {/* Delete Choice */}
@@ -332,10 +290,10 @@ export default function ImageFooter({
                 Cancel
               </button>
               <button className="px-3 py-2 rounded bg-[#5A514C] hover:bg-[#6A5E58]" onClick={() => deleteFromAlbum(false)} disabled={deleting}>
-                {deleting ? "Deleting…" : "Delete"}
+                {deleting ? "Deleting…" : "Delete here"}
               </button>
               <button className="px-3 py-2 rounded bg-[#D64C4C] hover:bg-[#E05757]" onClick={() => { setDeleteChoiceOpen(false); setPermConfirmOpen(true); }}>
-                Delete Permanently
+                Delete Global
               </button>
             </div>
           </div>
@@ -370,8 +328,8 @@ const TooltipButton = ({ icon, onClick, label, danger }) => (
     <button
       onClick={onClick}
       className={`h-9 w-9 sm:h-9 sm:w-9 md:h-10 md:w-10 flex items-center justify-center rounded-full shadow-md transition-all ${danger
-          ? "bg-[#2A1818] hover:bg-[#3A1E1E] text-[#FF6B6B]"
-          : "bg-[#201B19] hover:bg-[#2A2421] text-[#EDEAE6]"
+        ? "bg-[#2A1818] hover:bg-[#3A1E1E] text-[#FF6B6B]"
+        : "bg-[#201B19] hover:bg-[#2A2421] text-[#EDEAE6]"
         }`}
     >
       {icon}
@@ -403,8 +361,8 @@ const DropdownButton = ({ icon, label, open, setOpen, list, onSelect, currentId 
             key={alb.id}
             onClick={() => onSelect(alb.id)}
             className={`px-3 py-2 flex justify-between items-center hover:bg-[#2A2421] cursor-pointer ${alb.id === String(currentId)
-                ? "text-[#C9A97C] bg-[#C9A97C]/20"
-                : "text-[#EDEAE6]"
+              ? "text-[#C9A97C] bg-[#C9A97C]/20"
+              : "text-[#EDEAE6]"
               }`}
           >
             <span>{alb.name}</span>
@@ -436,8 +394,8 @@ const DropdownCheckboxButton = ({
             <li
               key={alb.id}
               className={`px-2 py-2 flex justify-between items-center rounded hover:bg-[#2A2421] cursor-pointer ${alb.id === String(currentId)
-                  ? "text-[#C9A97C] bg-[#C9A97C]/20"
-                  : "text-[#EDEAE6]"
+                ? "text-[#C9A97C] bg-[#C9A97C]/20"
+                : "text-[#EDEAE6]"
                 }`}
               onClick={() => toggle(alb.id)}
             >

@@ -5,39 +5,78 @@ const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function TagShare({ imageIds = [], onClose }) {
   const [input, setInput] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
-  const [tags, setTags] = useState([]);
-  const [friendsUsernames, setFriendsUsernames] = useState([]);
+  const [suggestions, setSuggestions] = useState([]); // array of friend objects
+  const [tags, setTags] = useState([]); // stored as canonical usernames
+  const [friends, setFriends] = useState([]); // array of { username, nickname }
   const inputRef = useRef(null);
 
-  // 🔹 Load friend usernames from Redux user slice on mount
+  // 🔹 Load friend list from Redux user slice on mount
   useEffect(() => {
     const user = store.getState().user.user;
     if (user && Array.isArray(user.friends)) {
-      const usernames = user.friends.map((friend) => friend.username);
-      setFriendsUsernames(usernames);
+      const mapped = user.friends.map((friend) => ({
+        username: friend.username,
+        nickname: friend.nickname || "",
+      }));
+      setFriends(mapped);
     }
   }, []);
 
   // 🔹 Filter suggestions dynamically as user types
   useEffect(() => {
-    if (input.trim() === "") {
+    const q = input.trim().toLowerCase();
+    if (q === "") {
       setSuggestions([]);
       return;
     }
-    const filtered = friendsUsernames.filter(
-      (username) =>
-        username.toLowerCase().startsWith(input.toLowerCase()) &&
-        !tags.includes(username)
+
+    // Find all matches
+    let filtered = friends.filter((f) => {
+      const u = f.username.toLowerCase();
+      const n = (f.nickname || "").toLowerCase();
+      return (
+        !tags.includes(f.username) &&
+        (u.startsWith(q) || n.startsWith(q))
+      );
+    });
+
+    // Sort: priority to username startsWith, then nickname startsWith
+    filtered = filtered.sort((a, b) => {
+      const aU = a.username.toLowerCase().startsWith(q) ? 0 : 1;
+      const bU = b.username.toLowerCase().startsWith(q) ? 0 : 1;
+
+      if (aU !== bU) return aU - bU;
+
+      const aN = (a.nickname || "").toLowerCase().startsWith(q) ? 0 : 1;
+      const bN = (b.nickname || "").toLowerCase().startsWith(q) ? 0 : 1;
+
+      return aN - bN;
+    });
+
+    // Limit to top 5
+    setSuggestions(filtered.slice(0, 5));
+  }, [input, friends, tags]);
+
+
+  // 🔹 Convert typed value (username or nickname) to canonical username if possible
+  function resolveToUsername(val) {
+    const q = (val || "").trim().toLowerCase();
+    if (!q) return "";
+    const found = friends.find(
+      (f) =>
+        f.username.toLowerCase() === q || (f.nickname || "").toLowerCase() === q
     );
-    setSuggestions(filtered);
-  }, [input, friendsUsernames, tags]);
+    if (found) return found.username;
+    // not found → treat typed value as a username (allow free-text)
+    return val.trim();
+  }
 
   // 🔹 Add new tag (either selected or typed manually)
-  function addTag(username) {
-    if (!username.trim()) return;
+  function addTag(raw) {
+    const username = resolveToUsername(raw);
+    if (!username) return;
     if (tags.includes(username)) return;
-    setTags((prev) => [...prev, username.trim()]);
+    setTags((prev) => [...prev, username]);
     setInput("");
     setSuggestions([]);
     inputRef.current?.focus();
@@ -78,17 +117,21 @@ export default function TagShare({ imageIds = [], onClose }) {
         throw new Error(`Share failed: ${errText}`);
       }
 
-      const data = await res.json();
+      await res.json();
       alert("Shared successfully!");
       setTags([]);
       setInput("");
       setSuggestions([]);
       onClose?.(true); // notify parent of success
     } catch (err) {
-      console.error("Error sharing images:", err.message);
-      alert("Error sharing: " + err.message);
+      console.error("Error sharing images:", err.message || err);
+      alert("Error sharing: " + (err.message || "Unknown error"));
     }
   }
+
+  // helper to get friend object for a username (if exists)
+  const getFriendForUsername = (username) =>
+    friends.find((f) => f.username === username) || null;
 
   return (
     <div
@@ -114,7 +157,7 @@ export default function TagShare({ imageIds = [], onClose }) {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Type username..."
+          placeholder="Type username or nickname..."
           className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-[#C9A97C] focus:outline-none"
           onKeyDown={(e) => {
             if (e.key === "Enter") {
@@ -128,13 +171,18 @@ export default function TagShare({ imageIds = [], onClose }) {
       {/* Suggestions List */}
       {suggestions.length > 0 && (
         <ul className="border border-gray-300 rounded-lg max-h-28 overflow-y-auto mb-3">
-          {suggestions.map((username) => (
+          {suggestions.map((f) => (
             <li
-              key={username}
-              onClick={() => addTag(username)}
-              className="px-3 py-2 cursor-pointer hover:bg-[#FFF3E0]"
+              key={f.username}
+              onMouseDown={(e) => {
+                // use onMouseDown to avoid input blur interfering
+                e.preventDefault();
+                addTag(f.username);
+              }}
+              className="px-3 py-2 cursor-pointer hover:bg-[#FFF3E0] flex justify-between items-center"
             >
-              {username}
+              <div className="text-sm">{f.username}</div>
+              <div className="text-xs text-gray-500">@{f.nickname || ""}</div>
             </li>
           ))}
         </ul>
@@ -142,28 +190,36 @@ export default function TagShare({ imageIds = [], onClose }) {
 
       {/* Selected Tags */}
       <div className="flex flex-wrap gap-2 mb-4">
-        {tags.map((username) => (
-          <div
-            key={username}
-            className="bg-[#C9A97C] text-white px-3 py-1 rounded-full flex items-center gap-2"
-          >
-            <span>{username}</span>
-            <button
-              type="button"
-              onClick={() => removeTag(username)}
-              className="text-white text-sm font-bold hover:text-gray-200"
-              aria-label={`Remove ${username}`}
+        {tags.map((username) => {
+          const friend = getFriendForUsername(username);
+          return (
+            <div
+              key={username}
+              className="bg-[#C9A97C] text-white px-3 py-1 rounded-full flex items-center gap-2"
             >
-              ×
-            </button>
-          </div>
-        ))}
+              <span className="font-medium text-sm">
+                {username}
+                {friend?.nickname ? (
+                  <span className="text-xs text-white/90 ml-2">(@{friend.nickname})</span>
+                ) : null}
+              </span>
+              <button
+                type="button"
+                onClick={() => removeTag(username)}
+                className="text-white text-sm font-bold hover:text-gray-200"
+                aria-label={`Remove ${username}`}
+              >
+                ×
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       {/* Share Button */}
       <button
         onClick={shareTags}
-        className="w-full bg-[#28a745] hover:bg-[#218838] text-white font-semibold py-2 rounded-lg transition-all duration-150"
+        className="w-full bg-[#70492c] hover:bg-[#C9A97C] text-white font-semibold py-2 rounded-lg transition-all duration-150"
       >
         Share
       </button>

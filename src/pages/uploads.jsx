@@ -1,5 +1,5 @@
 // src/pages/UploadPage.jsx
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect,useRef } from "react";
 import { useDropzone } from "react-dropzone";
 import { useSelector } from "react-redux";
 import { generateThumbnail } from "../utils/generateThumbnail"; // 👈 add this
@@ -17,10 +17,35 @@ export default function UploadPage() {
   const [fadeOut, setFadeOut] = useState(false);
 
   const [eventName, setEventName] = useState("");
-  const [eventDate, setEventDate] = useState("");
+  const [eventDate, setEventDate] = useState(new Date().toISOString().split("T")[0]);
   const [selectedAlbums, setSelectedAlbums] = useState([]);
-  const [selectedTags, setSelectedTags] = useState([]);
+  const [tagees, setTagees] = useState([]);
   const [tagInput, setTagInput] = useState("");
+  const suggestBoxRef = useRef(null);
+
+  // cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      files.forEach((f) => {
+        try { URL.revokeObjectURL(f.preview || f.id); } catch { }
+      });
+    };
+  }, []);
+
+  const removeFile = (id) => {
+    setFiles((prev) => {
+      const next = prev.filter((f) => {
+        if (f.id === id) {
+          try { URL.revokeObjectURL(f.preview || f.id); } catch { }
+          return false;
+        }
+        return true;
+      });
+      return next;
+    });
+  };
+
+
 
   // Albums
   const albums = useMemo(() => {
@@ -41,20 +66,27 @@ export default function UploadPage() {
     if (!user?.friends) return [];
     return user.friends.map((f) => ({
       username: f.username,
+      nickname: f.nickname || "",
       label: f.nickname || f.username,
     }));
   }, [user]);
 
   // Dropzone
   const onDrop = useCallback((acceptedFiles) => {
-    const mapped = acceptedFiles.map((file) => ({
-      file,
-      id: URL.createObjectURL(file),
-      size: file.size,
-      mime: file.type,
-    }));
+    const mapped = acceptedFiles.map((file) => {
+      const preview = URL.createObjectURL(file);
+      return {
+        file,
+        id: preview,
+        preview,
+        size: file.size,
+        mime: file.type,
+        name: file.name,
+      };
+    });
     setFiles((prev) => [...prev, ...mapped]);
   }, []);
+
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -64,8 +96,8 @@ export default function UploadPage() {
 
   // Add tags (manual + suggestions)
   const handleTagAdd = (username) => {
-    if (username && !selectedTags.includes(username)) {
-      setSelectedTags([...selectedTags, username]);
+    if (username && !tagees.includes(username)) {
+      setTagees([...tagees, username]);
     }
     setTagInput("");
   };
@@ -153,7 +185,7 @@ export default function UploadPage() {
         albumIds: selectedAlbums,
         event: eventName,
         date: eventDate,
-        taggeesUsernames: selectedTags,
+        taggeesUsernames: tagees,
       };
 
       const completeRes = await fetch(`${API_BASE}/upload-complete`, {
@@ -177,7 +209,7 @@ export default function UploadPage() {
       setEventName("");
       setEventDate("");
       setSelectedAlbums([]);
-      setSelectedTags([]);
+      setTagees([]);
     } catch (err) {
       console.error(err);
       alert("Upload failed: " + err.message);
@@ -218,12 +250,42 @@ export default function UploadPage() {
             key={f.id}
             className="flex items-center justify-between border border-[#d4bba4] rounded p-2 bg-white"
           >
-            <span>
-              {f.file.name} ({Math.round(f.size / 1024)} KB)
-            </span>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded overflow-hidden bg-[#f7f3ee] flex-shrink-0">
+                {(f.mime || "").startsWith("image/") ? (
+                  <img
+                    src={f.preview}
+                    alt={f.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
+                    {f.mime?.startsWith("video/") ? "VIDEO" : "FILE"}
+                  </div>
+                )}
+              </div>
+
+              <div className="text-sm">
+                <div className="font-medium">{f.name}</div>
+                <div className="text-xs text-gray-500">
+                  {Math.round(f.size / 1024)} KB
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                removeFile(f.id);
+              }}
+              className="text-red-600 hover:text-red-800 ml-4 text-sm"
+            >
+              x
+            </button>
           </div>
         ))}
       </div>
+
 
       <input
         type="text"
@@ -274,7 +336,7 @@ export default function UploadPage() {
                   }
                   className="text-xs text-red-600 hover:text-red-800"
                 >
-                  ✖
+                  x
                 </button>
               </span>
             );
@@ -298,24 +360,37 @@ export default function UploadPage() {
           className="border border-[#d4bba4] w-full p-2 rounded"
         />
         {tagInput && (
-          <div className="absolute bg-white border border-gray-200 rounded shadow-md w-full mt-1 z-10 max-h-32 overflow-y-auto">
+          <div ref={suggestBoxRef} className="absolute bg-white border border-gray-200 rounded shadow-md w-full mt-1 z-10 max-h-32 overflow-y-auto">
             {friends
-              .filter((f) =>
-                f.username.toLowerCase().includes(tagInput.toLowerCase())
-              )
+              .filter(f => {
+                const q = tagInput.toLowerCase();
+                if (!f.username) return false;
+                // exclude yourself
+                if (f.username === user?.username) return false;
+                return (f.username || "").toLowerCase().includes(q)
+                  || (f.nickname || "").toLowerCase().includes(q)
+                  || (f.label || "").toLowerCase().includes(q);
+              })
               .map((f) => (
                 <div
                   key={f.username}
-                  onClick={() => handleTagAdd(f.username)}
-                  className="p-2 hover:bg-gray-100 cursor-pointer"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    if (!tagees.includes(f.username)) {
+                      setTagees((prev) => [...prev, f.username]);
+                    }
+                    setTagInput("");
+                  }}
+                  className="p-2 hover:bg-gray-100 cursor-pointer text-sm flex w-full justify-between"
                 >
-                  {f.label}
+                  <div className="text-sm">{f.username}</div>
+                  <div className="text-xs text-gray-500">@{f.nickname || ""}</div>
                 </div>
               ))}
           </div>
         )}
         <div className="flex gap-2 mt-2 flex-wrap">
-          {selectedTags.map((username) => (
+          {tagees.map((username) => (
             <span
               key={username}
               className="px-2 py-1 rounded-full bg-[#f3e1d3] text-sm flex items-center gap-1"
@@ -323,11 +398,11 @@ export default function UploadPage() {
               {username}
               <button
                 onClick={() =>
-                  setSelectedTags(selectedTags.filter((x) => x !== username))
+                  setTagees(tagees.filter((x) => x !== username))
                 }
                 className="text-xs text-red-600 hover:text-red-800"
               >
-                ✖
+                x
               </button>
             </span>
           ))}
@@ -345,9 +420,16 @@ export default function UploadPage() {
 
       {isUploading && (
         <div
-          className={`w-full max-w-xl mt-6 p-4 rounded-lg border border-[#d4bba4] bg-white shadow transition-opacity duration-500 ${
-            fadeOut ? "opacity-0" : "opacity-100"
-          }`}
+          className={`
+    fixed bottom-[10px] left-1/2 -translate-x-1/2
+    w-full max-w-xl p-4
+    rounded-lg border border-[#d4bba4]
+    bg-white
+    drop-shadow-[0_0_35px_rgba(255,255,255,0.9)]
+    shadow
+    transition-opacity duration-500
+    ${fadeOut ? "opacity-0" : "opacity-100"}
+  `}
         >
           <div className="flex justify-between mb-1 text-sm text-[#5c3a21]">
             <span>Progress</span>
@@ -362,6 +444,6 @@ export default function UploadPage() {
         </div>
       )}
     </div>
-    </>
+  </>
   );
 }

@@ -155,6 +155,24 @@ export default function Nav() {
       {/* Mobile Menu */}
       {mobileOpen && (
         <div className="md:hidden bg-white border-t border-[#eadfd5] px-5 py-3 space-y-2 shadow-sm">
+                    <button
+            onClick={() => {
+              navigate("/dashboard");
+              setMobileOpen(false);
+            }}
+            className="block w-full text-left text-[#4b2e1a] hover:text-[#a0522d] py-2"
+          >
+            Dashboard
+          </button>
+                    <button
+            onClick={() => {
+              navigate("/upload");
+              setMobileOpen(false);
+            }}
+            className="block w-full text-left text-[#4b2e1a] hover:text-[#a0522d] py-2"
+          >
+            Uploads
+          </button>
           <button
             onClick={() => {
               navigate("/request");

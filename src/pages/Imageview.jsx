@@ -162,7 +162,7 @@ export default function ViewMedia() {
             aria-label="Close"
             onClick={() => {
               navigate(-1);
-              setTimeout(() => window.location.reload(), 150);
+              // setTimeout(() => window.location.reload(), 150);
             }}
             className="text-xl opacity-80 hover:opacity-100"
           >
