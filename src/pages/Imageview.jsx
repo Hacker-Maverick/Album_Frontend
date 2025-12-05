@@ -152,7 +152,7 @@ export default function ViewMedia() {
   }, [isVideo, goNext, goPrev, zoomIn, zoomOut, resetZoom, containerRef]);
 
   return (
-    <div className="fixed inset-0 bg-[#171312] text-white flex flex-col">
+    <div className="fixed inset-0 bg-[#171312] text-white flex flex-col max-h-screen">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3">
         <div className="text-[20px] font-semibold">{curEventName}</div>
@@ -213,7 +213,7 @@ export default function ViewMedia() {
                 controls
                 autoPlay
                 playsInline
-                className={`max-w-[90vw] max-h-[80vh] rounded-lg transition-opacity duration-150 ${isMediaLoading ? "opacity-0" : "opacity-100"
+                className={`max-w-[90vw] max-h-[70vh] rounded-lg transition-opacity duration-150 ${isMediaLoading ? "opacity-0" : "opacity-100"
                   }`}
                 onLoadedData={() => setIsMediaLoading(false)}
                 onError={() => {setIsMediaLoading(false);navigate("/dashboard");}}
@@ -222,7 +222,7 @@ export default function ViewMedia() {
               <img
                 src={viewUrl}
                 alt={curEventName}
-                className={`max-w-[90vw] max-h-[80vh] object-contain transition-transform duration-150 ease-out ${isMediaLoading ? "opacity-0" : "opacity-100"
+                className={`max-w-[90vw] max-h-[70vh] object-contain transition-transform duration-150 ease-out ${isMediaLoading ? "opacity-0" : "opacity-100"
                   } select-none`}
                 style={{
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,

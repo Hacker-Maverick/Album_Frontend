@@ -239,7 +239,7 @@ export default function Album({
             {/* ✏️ Rename Modal */}
             {renameModal.open && (
                 <ModalOverlay>
-                    <div className="bg-white rounded-xl w-[380px] max-w-[90vw] p-5 shadow-xl">
+                    <div className="bg-white rounded-xl w-[380px] max-w-[90vw] p-5 shadow-xl absolute z-50 top-[50vh] left-[50vw] translate-x-[-50%] translate-y-[-50%]">
                         <h3 className="text-lg font-semibold mb-3">Rename Album</h3>
                         <input
                             type="text"
@@ -271,7 +271,7 @@ export default function Album({
             {/* 🗑️ Delete Confirmation Modal */}
             {confirmDelete.open && (
                 <ModalOverlay>
-                    <div className="bg-white rounded-xl w-[380px] max-w-[90vw] p-5 shadow-xl">
+                    <div className="bg-white rounded-xl w-[380px] max-w-[90vw] p-5 shadow-xl absolute z-50 top-[50vh] left-[50vw] translate-x-[-50%] translate-y-[-50%]">
                         <h3 className="text-lg font-semibold mb-2">Delete Album</h3>
                         <p className="text-sm text-gray-700 mb-4">
                             Are you sure you want to delete{" "}

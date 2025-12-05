@@ -154,7 +154,7 @@ export default function RequestsPage() {
       const resjson = await res.json();
       if (!res.ok) throw new Error(resjson.message || "Failed to accept images");
 
-      toast.succcess("Images accepted successfully!");
+      toast.success("Images accepted successfully!");
 
       window.location.reload();
 
@@ -233,14 +233,6 @@ export default function RequestsPage() {
   //   setTagees((prev) => prev.filter((x) => x !== username));
   // };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-600">
-        Loading requests...
-      </div>
-    );
-  }
-
   return (
     <>
       <UserNav />
@@ -249,7 +241,13 @@ export default function RequestsPage() {
           Incoming Image Requests
         </h1>
 
-        {requests.length === 0 ? (
+        {loading && (
+          <div className="justify-center text-gray-600">
+            Loading requests...
+          </div>
+        )}
+
+        {requests.length === 0 && !loading ? (
           <p className="text-gray-500 text-sm sm:text-base">
             No pending image requests.
           </p>

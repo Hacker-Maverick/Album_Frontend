@@ -243,7 +243,7 @@ export default function Select({
     <div className="flex items-center gap-2 relative z-40">
       <button
         onClick={handleSelectAll}
-        className="px-4 py-2 rounded-lg bg-offWhite shadow-lg border border-[#F3EADF] hover:bg-[#EADFCF] text-sm font-medium text-gray-800"
+        className="flex border border-[#e3d6c5] bg-white text-sm font-medium text-[#a0522d] hover:bg-[#f8f1ea] px-3 py-2 rounded-md shadow-sm"
       >
         {allSelected ? "Deselect All" : "Select All"}
       </button>
@@ -251,7 +251,7 @@ export default function Select({
       {selectedImages.size > 0 && (
         <div className="relative">
           <button
-            className="p-2 rounded-xl hover:bg-[#EADFCF] w-10 border border-[#F3EADF] bg-offWhite shadow-lg flex items-center justify-center"
+            className="flex border border-[#e3d6c5] bg-white text-sm font-medium text-[#a0522d] hover:bg-[#f8f1ea] px-3 py-2 rounded-md shadow-sm"
             onClick={(e) => {
               e.stopPropagation();
               setIsActionMenuOpen((prev) => !prev);

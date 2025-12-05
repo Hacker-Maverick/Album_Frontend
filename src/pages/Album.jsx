@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { store } from "../../store";
 import { initializeAlbumsFromUser, loadMoreImages } from "../utils/loadAlbum";
 import { useNavigate, useLocation } from "react-router-dom";
-import {toast } from "react-toastify"
+import { toast } from "react-toastify"
 import Usernav from "../components/usernav.jsx";
 import Album from "../components/albumoptions";
 import Select from "../components/select";
@@ -143,12 +143,6 @@ export default function AlbumGallery() {
   //long press logic
   const startLongPress = (touch, idKey) => {
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
-
-    longPressTimer.current = setTimeout(() => {
-      // simulate right-click behavior
-      setSelectionMode(true);
-      toggleImageSelection(idKey);
-    }, 550); // long-press duration
   };
 
   const cancelLongPress = () => {
@@ -268,7 +262,7 @@ export default function AlbumGallery() {
   const Thumbnail = ({ src, alt }) => {
     const [loaded, setLoaded] = useState(false);
     return (
-      <div className="w-full h-full bg-[#f7f3ee] rounded-lg overflow-hidden relative">
+      <div className="w-full h-full bg-[#f7f3ee] rounded-xs overflow-hidden relative">
         {!loaded && (
           <div className="absolute inset-0 animate-pulse bg-[#efe7dd]" />
         )}
@@ -333,6 +327,20 @@ export default function AlbumGallery() {
       setIsCreating(false);
     }
   };
+
+  if (!selectedAlbum) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center" style={{ background: "#FBF7F2" }}>
+        <div className="flex items-center space-x-2 text-gray-600">
+          <svg className="animate-spin h-5 w-5 text-[#C9A97C]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+          </svg>
+          <span>Loading...</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -417,7 +425,7 @@ export default function AlbumGallery() {
 
           {/* Mobile overlay panel */}
           <div
-            className={`sm:hidden fixed h-[94vh] left-0 z-40 transform transition-transform duration-200 ${sideOpen ? "translate-x-0" : "-translate-x-full"}`}
+            className={`sm:hidden fixed h-[92vh] left-0 z-40 transform transition-transform duration-200 ${sideOpen ? "translate-x-0" : "-translate-x-full"}`}
             style={{ width: sideOpen ? "100vw" : 0, background: "#FBF7F2", overflow: "hidden", maxHeight: "100vh" }}
             aria-hidden={!sideOpen}
           >
@@ -433,7 +441,7 @@ export default function AlbumGallery() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 pb-4">
+              <div className="overflow-y-auto px-4 pb-4">
                 {/* Use Album component for mobile too */}
                 <Album
                   albums={
@@ -490,7 +498,7 @@ export default function AlbumGallery() {
 
         {/* MAIN CONTENT (to the right of sidebar) */}
         <div
-          className={`min-h-screen px-4 md:px-6 lg:px-10 ${sideOpen ? "ml-0 md:ml-[22vw] sm:ml-[30vw]" : "ml-0"}`}
+          className={`min-h-screen px-2 md:px-4 lg:px-8 ${sideOpen ? "ml-0 md:ml-[22vw] sm:ml-[30vw]" : "ml-0"}`}
           style={{
             background: "#FBF7F2",
           }}
@@ -502,17 +510,24 @@ export default function AlbumGallery() {
               {selectedAlbum ? selectedAlbum.name : "Select an album"}
             </div>
 
-            {/* Select toolbar (unchanged) */}
-            {selectedAlbum && currentAlbum && (
-              <Select
-                currentAlbum={currentAlbum}
-                selectedImages={selectedImages}
-                setSelectedImages={setSelectedImages}
-                albumId={selectedAlbum.id}
-                albumName={selectedAlbum.name}
-                user={user}
-              />
-            )}
+            <div className="flex">
+              <button className="flex border border-[#e3d6c5] bg-white text-sm font-medium text-[#a0522d] hover:bg-[#f8f1ea] px-3 py-2 rounded-md shadow-sm mx-2"
+                onClick={() => navigate("/upload")}>
+                Upload
+              </button>
+              {/* Select toolbar (unchanged) */}
+              {selectedAlbum && currentAlbum && (
+                <Select
+                  currentAlbum={currentAlbum}
+                  selectedImages={selectedImages}
+                  setSelectedImages={setSelectedImages}
+                  albumId={selectedAlbum.id}
+                  albumName={selectedAlbum.name}
+                  user={user}
+                />
+              )}
+            </div>
+
           </div>
 
           {/* Create Album Modal (unchanged) */}
@@ -594,8 +609,8 @@ export default function AlbumGallery() {
                 };
 
                 return (
-                  <section key={`${ev.event}-${ev.date}-${idx}`} className="bg-white rounded-2xl p-2 sm:p-3 shadow-md border border-[#f0e7dd]">
-                    <div className="flex flex-row items-center justify-between mb-2">
+                  <section key={`${ev.event}-${ev.date}-${idx}`} className="bg-[#f0d6ca] rounded-md p-1 sm:p-3 shadow-md border border-[#f0e7dd]">
+                    <div className="flex flex-row items-center justify-between mb-1">
                       <h3 className="sm:text-lg text-md font-semibold text-gray-800">{ev.event}</h3>
 
                       <div className="flex items-center">
@@ -612,7 +627,7 @@ export default function AlbumGallery() {
                       </div>
                     </div>
 
-                    <div className="grid gap-3 grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
+                    <div className="grid sm:gap-2 grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
                       {ev.images.map((imgObj, i) => {
                         const idKey = imgObj.id || imgObj._id || `${idx}-${i}`;
                         const thumb = imgObj.thumbnailUrl || imgObj.thumbnailKey;
@@ -653,7 +668,6 @@ export default function AlbumGallery() {
                               cancelLongPress();
                             }}
                             onTouchEnd={(e) => {
-                              // if timer still active -> it was not a long-press, treat as a tap
                               if (longPressTimer.current) {
                                 cancelLongPress();
                                 if (selectionMode || selectedImages.size > 0) {
@@ -683,7 +697,7 @@ export default function AlbumGallery() {
                               toggleImageSelection(idKey);
                             }}
 
-                            className={`aspect-square rounded-lg relative cursor-pointer border-2 ${isSelected ? "border-[#C9A97C] ring-2 ring-[#C9A97C]" : "border-transparent"
+                            className={`aspect-square rounded-xs relative cursor-pointer border-2 ${isSelected ? "border-[#C9A97C] ring-2 ring-[#C9A97C]" : "border-transparent"
                               }`}
                           >
                             <Thumbnail src={thumb} alt={`${ev.event}-${i}`} />
@@ -703,7 +717,7 @@ export default function AlbumGallery() {
               <div ref={sentinelRef} className="h-6" />
             </div>
           ) : (
-            <div className="text-center text-gray-600 py-10">{isLoading ? "Loading..." : "No images found."}</div>
+            <div className="text-center text-gray-600 py-10">{isLoading ? "" : "No images found."}</div>
           )}
 
           {/* bottom loading / end indicator */}
