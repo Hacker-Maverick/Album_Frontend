@@ -85,6 +85,7 @@ export default function ImageFooter({
         setCurrentIndex(nextIndex);
       } else {
         sessionStorage.removeItem("imageViewState");
+        navigate("/dashboard");
       }
     } catch (e) {
       console.error("Failed to update image view state", e);

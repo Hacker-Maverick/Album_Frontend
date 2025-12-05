@@ -27,6 +27,9 @@ export default function AlbumGallery() {
   const [newAlbumName, setNewAlbumName] = useState("");
   const [createError, setCreateError] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [sideOpen, setSideOpen] = useState(window.innerWidth >= 640);
+  const longPressTimer = useRef(null);
+  const touchStartPos = useRef({ x: 0, y: 0 });
 
   // responsive batch size
   const getColumns = () => {
@@ -135,6 +138,24 @@ export default function AlbumGallery() {
       setSelectionMode(false);
     }
   }, [selectedImages]);
+
+  //long press logic
+  const startLongPress = (touch, idKey) => {
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+
+    longPressTimer.current = setTimeout(() => {
+      // simulate right-click behavior
+      setSelectionMode(true);
+      toggleImageSelection(idKey);
+    }, 550); // long-press duration
+  };
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
 
   // format event date
   const formatEventDate = (d) => {
@@ -315,198 +336,300 @@ export default function AlbumGallery() {
   return (
     <>
       <Usernav />
-      <div className="min-h-screen px-4 md:px-6 lg:px-10" style={{ background: "#FBF7F2" }}>
-        {/* header */}
-        <div className="flex flex-wrap gap-3 items-center justify-between z-10 top-14 sticky py-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <Album
-              albums={
-                isHiddenView
-                  ? (() => {
-                    const hiddenGroup = user?.groups?.find(
-                      (g) => g.groupName?.toLowerCase() === "hidden"
-                    );
-                    return hiddenGroup?.albumId
-                      ? [{ id: hiddenGroup.albumId, name: "Hidden Album" }]
-                      : [];
-                  })()
-                  : albumOptions.filter(
-                    (opt) => opt.name.toLowerCase() !== "hidden"
-                  )
-              }
-              selectedAlbum={selectedAlbum}
-              setSelectedAlbum={(album) => {
-                setSelectedAlbum(album);
-                setHasMore(true);
-                setSelectedImages(new Set());
-                setSelectionMode(false);
-              }}
-              clearSelection={() => {
-                setSelectedImages(new Set());
-                setSelectionMode(false);
-              }}
-            />
 
-            {!isHiddenView && (
-              <button
-                onClick={() => {
-                  setNewAlbumName("");
-                  setCreateError("");
-                  setShowCreateModal(true);
-                }}
-                className="flex items-center gap-2 px-3 py-2 rounded-full border border-[#e3d6c5] bg-white text-sm font-medium text-[#a0522d] hover:bg-[#f8f1ea] hover:border-[#d4b693] transition-colors shadow-sm"
-              >
-                <span className="text-lg leading-none font-bold">+</span>
-                <span className="hidden sm:inline">Create album</span>
-              </button>
-            )}
+      {/* root container */}
+      <div className="relative min-h-screen" style={{ background: "#FBF7F2" }}>
+        {/* LEFT PANEL (desktop fixed + mobile overlay) */}
+        <aside aria-label="Album sidebar" className="relative z-40">
+          {/* Desktop fixed sidebar (30vw) */}
+          <div
+            className={`hidden sm:flex md:w-[22vw] sm:w-[30vw] fixed left-0 top-14 z-40 box-border h-screen flex-col border-r border-[#ddd1d1] transition-transform duration-0 ${sideOpen ? "translate-x-0" : "-translate-x-full"}`}
+            style={{ maxHeight: "100vh" }}
+          >
+            <div className="flex flex-col ">
+              {/* heading */}
+              <div className="px-6 pt-6 pb-3">
+                <div className="text-xs font-semibold text-gray-500 uppercase">Albums</div>
+              </div>
 
+              {/* album list (scrollable) - render Album component */}
+              <div className="flex-1 overflow-y-auto px-4 pb-4" style={{ maxHeight: "calc(100vh - 160px)" }}>
+                {/* Use the existing Album component — pass the same albums prop logic as before */}
+                <Album
+                  albums={
+                    isHiddenView
+                      ? (() => {
+                        const hiddenGroup = user?.groups?.find(
+                          (g) => g.groupName?.toLowerCase() === "hidden"
+                        );
+                        return hiddenGroup?.albumId
+                          ? [{ id: hiddenGroup.albumId, name: "Hidden Album" }]
+                          : [];
+                      })()
+                      : albumOptions.filter((opt) => opt.name.toLowerCase() !== "hidden")
+                  }
+                  selectedAlbum={selectedAlbum}
+                  setSelectedAlbum={(album) => {
+                    setSelectedAlbum(album);
+                    setHasMore(true);
+                    setSelectedImages(new Set());
+                    setSelectionMode(false);
+                  }}
+                  clearSelection={() => {
+                    setSelectedImages(new Set());
+                    setSelectionMode(false);
+                  }}
+                />
+              </div>
+
+              {/* create album at bottom */}
+              <div className="px-4 py-4 border-t border-[#f0e9e0]">
+                {!isHiddenView && (
+                  <button
+                    onClick={() => {
+                      setNewAlbumName("");
+                      setCreateError("");
+                      setShowCreateModal(true);
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-2 rounded-md border border-[#e3d6c5] bg-white text-sm font-medium text-[#a0522d] hover:bg-[#f8f1ea] transition-colors shadow-sm"
+                    aria-label="Create album"
+                  >
+                    <span className="text-lg leading-none font-bold">+</span>
+                    <span>Create album</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* arrow toggle button (desktop) */}
+            <button
+              onClick={() => setSideOpen((s) => !s)}
+              aria-label={sideOpen ? "Collapse sidebar" : "Open sidebar"}
+              className="hidden sm:flex items-center justify-center absolute -right-8 top-[40%] w-8 h-10 rounded-r-md bg-white border border-[#eae5df] shadow-sm"
+              style={{ zIndex: 60 }}
+            >
+              <svg className={`w-4 h-4 transition-transform duration-200 ${sideOpen ? "" : "rotate-180"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
           </div>
 
-          {selectedAlbum && currentAlbum && (
-            <Select
-              currentAlbum={currentAlbum}
-              selectedImages={selectedImages}
-              setSelectedImages={setSelectedImages}
-              albumId={selectedAlbum.id}
-              albumName={selectedAlbum.name}
-              user={user}
-            />
-          )}
-        </div>
+          {/* Mobile overlay panel */}
+          <div
+            className={`sm:hidden fixed h-[94vh] left-0 z-40 transform transition-transform duration-200 ${sideOpen ? "translate-x-0" : "-translate-x-full"}`}
+            style={{ width: sideOpen ? "100vw" : 0, background: "#FBF7F2", overflow: "hidden", maxHeight: "100vh" }}
+            aria-hidden={!sideOpen}
+          >
+            <div className="h-full flex flex-col">
+              <div className="px-4 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-semibold text-gray-600 uppercase">Albums</div>
+                  <button onClick={() => setSideOpen(false)} className="p-2 rounded-md bg-white border border-[#eae5df] shadow-md absolute top-[40%] right-5" aria-label="Close albums">
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
-        {/* Create Album Modal */}
-        {showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-            {/* backdrop */}
-            <div
-              className="absolute inset-0 bg-black/40"
-              onClick={() => {
-                if (!isCreating) {
-                  setShowCreateModal(false);
-                  setCreateError("");
-                }
-              }}
-            />
-            {/* card */}
-            <div className="relative w-full max-w-md bg-white rounded-xl border border-[#e9e1d6] shadow-xl p-5 z-10">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Create Album</h3>
-              <p className="text-sm text-gray-500 mb-4">Enter a name for your new album.</p>
-
-              <input
-                type="text"
-                value={newAlbumName}
-                onChange={(e) => setNewAlbumName(e.target.value)}
-                disabled={isCreating}
-                className="w-full border border-[#d4bba4] rounded-md p-2 mb-2"
-                placeholder="Album name"
-              />
-              {createError && (
-                <div className="text-xs text-red-600 mb-2">{createError}</div>
-              )}
-
-              <div className="flex justify-end gap-2 mt-3">
-                <button
-                  onClick={() => {
-                    if (!isCreating) {
-                      setShowCreateModal(false);
-                      setCreateError("");
-                    }
+              <div className="flex-1 overflow-y-auto px-4 pb-4">
+                {/* Use Album component for mobile too */}
+                <Album
+                  albums={
+                    isHiddenView
+                      ? (() => {
+                        const hiddenGroup = user?.groups?.find(
+                          (g) => g.groupName?.toLowerCase() === "hidden"
+                        );
+                        return hiddenGroup?.albumId
+                          ? [{ id: hiddenGroup.albumId, name: "Hidden Album" }]
+                          : [];
+                      })()
+                      : albumOptions.filter((opt) => opt.name.toLowerCase() !== "hidden")
+                  }
+                  selectedAlbum={selectedAlbum}
+                  setSelectedAlbum={(album) => {
+                    setSelectedAlbum(album);
+                    setHasMore(true);
+                    setSelectedImages(new Set());
+                    setSelectionMode(false);
+                    setSideOpen(false); // close overlay on selection (mobile)
                   }}
-                  className="px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-100 text-sm"
-                  disabled={isCreating}
-                >
-                  Cancel
-                </button>
+                  clearSelection={() => {
+                    setSelectedImages(new Set());
+                    setSelectionMode(false);
+                  }}
+                />
+              </div>
 
-                <button
-                  onClick={submitCreateAlbum}
-                  className="px-3 py-2 rounded-md bg-[#8b5e3c] text-white hover:bg-[#70492c] text-sm"
-                  disabled={isCreating}
-                >
-                  {isCreating ? "Creating..." : "Create"}
-                </button>
+              <div className="px-4 py-4 border-t border-[#f0e9e0]">
+                {!isHiddenView && (
+                  <button
+                    onClick={() => {
+                      setNewAlbumName("");
+                      setCreateError("");
+                      setShowCreateModal(true);
+                      setSideOpen(false);
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-2 rounded-md border border-[#e3d6c5] bg-white text-sm font-medium text-[#a0522d] hover:bg-[#f8f1ea] transition-colors shadow-sm"
+                  >
+                    <span className="text-lg leading-none font-bold">+</span>
+                    <span>Create album</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
-        )}
+          <button onClick={() => setSideOpen(true)} className={`p-2 rounded-r-md bg-white border border-[#eae5df] shadow-sm fixed top-[40vh] sm:hidden ${sideOpen ? "hidden" : ""}`} aria-label="Close albums">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </aside>
 
+        {/* MAIN CONTENT (to the right of sidebar) */}
+        <div
+          className={`min-h-screen px-4 md:px-6 lg:px-10 ${sideOpen ? "ml-0 md:ml-[22vw] sm:ml-[30vw]" : "ml-0"}`}
+          style={{
+            background: "#FBF7F2",
+          }}
+        >
+          {/* header */}
+          <div className="flex flex-wrap gap-3 items-center justify-between z-10 sticky top-13 bg-[#FBF7F2] sm:p-5 p-2 border-b border-[#e6ded3]">
 
-        {/* image grid */}
-        {selectedAlbum && currentAlbum && currentAlbum.data?.length > 0 ? (
-          <div className="space-y-6">
-            {currentAlbum.data.map((ev, idx) => {
-              const eventIds = ev.images.map(
-                (imgObj, i) => imgObj.id || imgObj._id || `${idx}-${i}`
-              );
-              const selectedInEvent = eventIds.filter((id) =>
-                selectedImages.has(id)
-              );
-              const allSelectedInEvent =
-                eventIds.length > 0 && selectedInEvent.length === eventIds.length;
+            <div className="text-lg text-[#8b5e3c] font-semibold">
+              {selectedAlbum ? selectedAlbum.name : "Select an album"}
+            </div>
 
-              const handleEventSelectAll = () => {
-                setSelectedImages((prev) => {
-                  const next = new Set(prev);
-                  eventIds.forEach((id) => next.add(id));
-                  return new Set(next);
-                });
-                setSelectionMode(true);
-              };
-              const handleEventDeselectAll = () => {
-                setSelectedImages((prev) => {
-                  const next = new Set(prev);
-                  eventIds.forEach((id) => next.delete(id));
-                  return new Set(next);
-                });
-              };
+            {/* Select toolbar (unchanged) */}
+            {selectedAlbum && currentAlbum && (
+              <Select
+                currentAlbum={currentAlbum}
+                selectedImages={selectedImages}
+                setSelectedImages={setSelectedImages}
+                albumId={selectedAlbum.id}
+                albumName={selectedAlbum.name}
+                user={user}
+              />
+            )}
+          </div>
 
-              return (
-                <section
-                  key={`${ev.event}-${ev.date}-${idx}`}
-                  className="bg-white rounded-2xl p-4 sm:p-5 shadow-md border border-[#f0e7dd]"
-                >
-                  {/* header row */}
-                  <div className="flex flex-row items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      {ev.event}
-                    </h3>
+          {/* Create Album Modal (unchanged) */}
+          {showCreateModal && (
+            <div className="fixed inset-0 z-40 flex items-center justify-center px-4">
+              <div
+                className="absolute inset-0 bg-black/40"
+                onClick={() => {
+                  if (!isCreating) {
+                    setShowCreateModal(false);
+                    setCreateError("");
+                  }
+                }}
+              />
+              <div className="relative w-full max-w-md bg-white rounded-xl border border-[#e9e1d6] shadow-xl p-5 z-10">
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Create Album</h3>
+                <p className="text-sm text-gray-500 mb-4">Enter a name for your new album.</p>
 
-                    <div className="flex items-center">
-                      <div className="text-sm text-gray-500">
-                        {formatEventDate(ev.date)}
+                <input
+                  type="text"
+                  value={newAlbumName}
+                  onChange={(e) => setNewAlbumName(e.target.value)}
+                  disabled={isCreating}
+                  className="w-full border border-[#d4bba4] rounded-md p-2 mb-2"
+                  placeholder="Album name"
+                />
+                {createError && (
+                  <div className="text-xs text-red-600 mb-2">{createError}</div>
+                )}
+
+                <div className="flex justify-end gap-2 mt-3">
+                  <button
+                    onClick={() => {
+                      if (!isCreating) {
+                        setShowCreateModal(false);
+                        setCreateError("");
+                      }
+                    }}
+                    className="px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-100 text-sm"
+                    disabled={isCreating}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={submitCreateAlbum}
+                    className="px-3 py-2 rounded-md bg-[#8b5e3c] text-white hover:bg-[#70492c] text-sm"
+                    disabled={isCreating}
+                  >
+                    {isCreating ? "Creating..." : "Create"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Image grid / events */}
+          {selectedAlbum && currentAlbum && currentAlbum.data?.length > 0 ? (
+            <div className="space-y-6">
+              {currentAlbum.data.map((ev, idx) => {
+                const eventIds = ev.images.map((imgObj, i) => imgObj.id || imgObj._id || `${idx}-${i}`);
+                const selectedInEvent = eventIds.filter((id) => selectedImages.has(id));
+                const allSelectedInEvent = eventIds.length > 0 && selectedInEvent.length === eventIds.length;
+
+                const handleEventSelectAll = () => {
+                  setSelectedImages((prev) => {
+                    const next = new Set(prev);
+                    eventIds.forEach((id) => next.add(id));
+                    return new Set(next);
+                  });
+                  setSelectionMode(true);
+                };
+                const handleEventDeselectAll = () => {
+                  setSelectedImages((prev) => {
+                    const next = new Set(prev);
+                    eventIds.forEach((id) => next.delete(id));
+                    return new Set(next);
+                  });
+                };
+
+                return (
+                  <section key={`${ev.event}-${ev.date}-${idx}`} className="bg-white rounded-2xl p-2 sm:p-3 shadow-md border border-[#f0e7dd]">
+                    <div className="flex flex-row items-center justify-between mb-2">
+                      <h3 className="sm:text-lg text-md font-semibold text-gray-800">{ev.event}</h3>
+
+                      <div className="flex items-center">
+                        <div className="sm:text-sm text-xs text-gray-500">{formatEventDate(ev.date)}</div>
+
+                        {selectedInEvent.length > 0 && (
+                          <button
+                            onClick={allSelectedInEvent ? handleEventDeselectAll : handleEventSelectAll}
+                            className="mx-2 px-3 py-1.5 rounded-full border border-[#e3d6c5] bg-white text-xs sm:text-sm font-medium text-[#6b4c2f] hover:bg-[#f8f1ea] hover:border-[#d4b693] transition-colors"
+                          >
+                            {allSelectedInEvent ? "Deselect all" : "Select all"}
+                          </button>
+                        )}
                       </div>
-
-                      {selectedInEvent.length > 0 && (
-                        <button
-                          onClick={
-                            allSelectedInEvent
-                              ? handleEventDeselectAll
-                              : handleEventSelectAll
-                          }
-                          className="px-3 py-1.5 rounded-full border border-[#e3d6c5] bg-white text-xs sm:text-sm font-medium text-[#6b4c2f] hover:bg-[#f8f1ea] hover:border-[#d4b693] transition-colors"
-                        >
-                          {allSelectedInEvent ? "Deselect all" : "Select all"}
-                        </button>
-                      )}
                     </div>
-                  </div>
 
-                  <div className="grid gap-3 grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
-                    {ev.images.map((imgObj, i) => {
-                      const idKey =
-                        imgObj.id || imgObj._id || `${idx}-${i}`;
-                      const thumb =
-                        imgObj.thumbnailUrl || imgObj.thumbnailKey;
-                      const isSelected = selectedImages.has(idKey);
-                      return (
-                        <div
-                          key={idKey}
-                          onClick={(e) => {
-                            if (selectionMode || selectedImages.size > 0) {
-                              toggleImageSelection(idKey);
-                              e.stopPropagation();
-                            } else {
+                    <div className="grid gap-3 grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
+                      {ev.images.map((imgObj, i) => {
+                        const idKey = imgObj.id || imgObj._id || `${idx}-${i}`;
+                        const thumb = imgObj.thumbnailUrl || imgObj.thumbnailKey;
+                        const isSelected = selectedImages.has(idKey);
+                        return (
+                          /* image tile with long-press support */
+                          <div
+                            key={idKey}
+
+                            /* Desktop click handler (mouse) */
+                            onClick={(e) => {
+                              if (selectionMode || selectedImages.size > 0) {
+                                // toggle selection when in selection mode or some selected
+                                toggleImageSelection(idKey);
+                                e.stopPropagation();
+                                return;
+                              }
+                              // normal navigate to image view
                               const stateToPass = {
                                 imageId: idKey,
                                 albumId: selectedAlbum.id,
@@ -515,76 +638,90 @@ export default function AlbumGallery() {
                                 eventDate: ev.date,
                                 images: ev.images,
                               };
-                              sessionStorage.setItem(
-                                "imageViewState",
-                                JSON.stringify(stateToPass)
-                              );
-                              navigate(`/imageview/${idKey}`, {
-                                state: stateToPass,
-                              });
-                            }
-                          }}
-                          onContextMenu={(e) => {
-                            e.preventDefault();
-                            setSelectionMode(true);
-                            toggleImageSelection(idKey);
-                          }}
-                          className={`aspect-square rounded-lg relative cursor-pointer border-2 ${isSelected
-                            ? "border-[#C9A97C] ring-2 ring-[#C9A97C]"
-                            : "border-transparent"
-                            }`}
-                        >
-                          <Thumbnail src={thumb} alt={`${ev.event}-${i}`} />
-                          {isSelected && (
-                            <div className="absolute top-1 right-1 bg-[#C9A97C] text-white text-xs px-2 py-1 rounded-full">
-                              ✓
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            })}
-            <div ref={sentinelRef} className="h-6" />
-          </div>
-        ) : (
-          <div className="text-center text-gray-600 py-10">
-            {isLoading ? "Loading..." : "No images found."}
-          </div>
-        )}
+                              sessionStorage.setItem("imageViewState", JSON.stringify(stateToPass));
+                              navigate(`/imageview/${idKey}`, { state: stateToPass });
+                            }}
 
-        <div className="flex justify-center py-6">
-          {isLoading ? (
-            <div className="flex items-center space-x-2 text-gray-600">
-              <svg
-                className="animate-spin h-5 w-5 text-[#C9A97C]"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v8z"
-                ></path>
-              </svg>
-              <span>Loading...</span>
+                            /* Touch handlers for long-press (mobile) */
+                            onTouchStart={(e) => {
+                              const t = e.touches?.[0] || e;
+                              startLongPress(t, idKey); // will select after hold
+                            }}
+                            onTouchMove={() => {
+                              // cancel if finger moves (scroll)
+                              cancelLongPress();
+                            }}
+                            onTouchEnd={(e) => {
+                              // if timer still active -> it was not a long-press, treat as a tap
+                              if (longPressTimer.current) {
+                                cancelLongPress();
+                                if (selectionMode || selectedImages.size > 0) {
+                                  toggleImageSelection(idKey);
+                                  e.stopPropagation();
+                                } else {
+                                  const stateToPass = {
+                                    imageId: idKey,
+                                    albumId: selectedAlbum.id,
+                                    albumName: selectedAlbum.name,
+                                    eventName: ev.event,
+                                    eventDate: ev.date,
+                                    images: ev.images,
+                                  };
+                                  sessionStorage.setItem("imageViewState", JSON.stringify(stateToPass));
+                                  navigate(`/imageview/${idKey}`, { state: stateToPass });
+                                }
+                              }
+                              // if timer already fired, long-press handled selection — nothing else to do
+                            }}
+                            onTouchCancel={() => cancelLongPress()}
+
+                            /* Desktop right-click behavior */
+                            onContextMenu={(e) => {
+                              e.preventDefault();
+                              setSelectionMode(true);
+                              toggleImageSelection(idKey);
+                            }}
+
+                            className={`aspect-square rounded-lg relative cursor-pointer border-2 ${isSelected ? "border-[#C9A97C] ring-2 ring-[#C9A97C]" : "border-transparent"
+                              }`}
+                          >
+                            <Thumbnail src={thumb} alt={`${ev.event}-${i}`} />
+                            {isSelected && (
+                              <div className="absolute top-1 right-1 bg-[#C9A97C] text-white text-xs px-2 py-1 rounded-full">
+                                ✓
+                              </div>
+                            )}
+                          </div>
+
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })}
+              <div ref={sentinelRef} className="h-6" />
             </div>
-          ) : !hasMore ? (
-            <div className="text-gray-500">🎉 All images loaded.</div>
-          ) : null}
+          ) : (
+            <div className="text-center text-gray-600 py-10">{isLoading ? "Loading..." : "No images found."}</div>
+          )}
+
+          {/* bottom loading / end indicator */}
+          <div className="flex justify-center py-6">
+            {isLoading ? (
+              <div className="flex items-center space-x-2 text-gray-600">
+                <svg className="animate-spin h-5 w-5 text-[#C9A97C]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                </svg>
+                <span>Loading...</span>
+              </div>
+            ) : !hasMore ? (
+              <div className="text-gray-500">🎉 All images loaded.</div>
+            ) : null}
+          </div>
         </div>
       </div>
     </>
   );
+
 }

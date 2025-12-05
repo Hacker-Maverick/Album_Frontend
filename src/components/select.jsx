@@ -189,8 +189,6 @@ export default function Select({
       return;
     }
 
-    const event = findEventOfImage(ids[0]);
-
     try {
       await editImages({
         albumIds: eventModal.albums,
@@ -244,7 +242,7 @@ export default function Select({
     <div className="flex items-center gap-2 relative z-40">
       <button
         onClick={handleSelectAll}
-        className="px-4 py-2 rounded-lg bg-[#F3EADF] hover:bg-[#EADFCF] text-sm font-medium text-gray-800"
+        className="px-4 py-2 rounded-lg bg-offWhite shadow-lg border border-[#F3EADF] hover:bg-[#EADFCF] text-sm font-medium text-gray-800"
       >
         {allSelected ? "Deselect All" : "Select All"}
       </button>
@@ -252,7 +250,7 @@ export default function Select({
       {selectedImages.size > 0 && (
         <div className="relative">
           <button
-            className="p-2 rounded-full hover:bg-gray-200"
+            className="p-2 rounded-xl hover:bg-[#EADFCF] w-10 border border-[#F3EADF] bg-offWhite shadow-lg flex items-center justify-center"
             onClick={(e) => {
               e.stopPropagation();
               setIsActionMenuOpen((prev) => !prev);

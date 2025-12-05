@@ -161,7 +161,7 @@ export default function ViewMedia() {
           <button
             aria-label="Close"
             onClick={() => {
-              navigate(-1);
+              navigate("/dashboard");
               // setTimeout(() => window.location.reload(), 150);
             }}
             className="text-xl opacity-80 hover:opacity-100"
@@ -216,7 +216,7 @@ export default function ViewMedia() {
                 className={`max-w-[90vw] max-h-[80vh] rounded-lg transition-opacity duration-150 ${isMediaLoading ? "opacity-0" : "opacity-100"
                   }`}
                 onLoadedData={() => setIsMediaLoading(false)}
-                onError={() => setIsMediaLoading(false)}
+                onError={() => {setIsMediaLoading(false);navigate("/dashboard");}}
               />
             ) : (
               <img
@@ -230,7 +230,7 @@ export default function ViewMedia() {
                   cursor: zoom > 1 ? "grab" : "default",
                 }}
                 onLoad={() => setIsMediaLoading(false)}
-                onError={() => setIsMediaLoading(false)}
+                onError={() => {setIsMediaLoading(false);navigate("/dashboard");}}
                 draggable={false}
               />
             ))}
