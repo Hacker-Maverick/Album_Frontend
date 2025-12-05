@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { store } from "../../store";
 import { initializeAlbumsFromUser, loadMoreImages } from "../utils/loadAlbum";
 import { useNavigate, useLocation } from "react-router-dom";
+import {toast } from "react-toastify"
 import Usernav from "../components/usernav.jsx";
 import Album from "../components/albumoptions";
 import Select from "../components/select";
@@ -322,7 +323,7 @@ export default function AlbumGallery() {
       setShowCreateModal(false);
       setNewAlbumName("");
       // optionally show message
-      alert(data.message || "Album created successfully.");
+      toast.success(data.message || "Album created successfully.");
       // refresh page or re-run album loader:
       window.location.reload();
     } catch (err) {

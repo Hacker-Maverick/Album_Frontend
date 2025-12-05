@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { deleteAlbumSoft } from "../utils/albumdelete.js";
 import { store } from "../../store";
+import { toast } from "react-toastify";
 
 export default function Album({
     albums = [],
@@ -116,11 +117,11 @@ export default function Album({
                 throw new Error(msg);
             }
 
-            alert(data.message || "Album renamed successfully.");
+            toast.success(data.message || "Album renamed successfully.");
             window.location.reload();
         } catch (err) {
             console.error("Rename error:", err);
-            alert(err.message || "An unexpected error occurred while renaming.");
+            toast.error(err.message || "An unexpected error occurred while renaming.");
         } finally {
             setRenameModal({ open: false, album: null, newName: "" });
         }
@@ -137,7 +138,7 @@ export default function Album({
             const mainAlbumId = store.getState().user?.user.main_album;
 
             if (String(albumId) === String(mainAlbumId)) {
-                alert("⚠️ You cannot delete your Main Album.");
+                toast.warning("⚠️ You cannot delete your Main Album.");
                 return;
             }
 
@@ -153,7 +154,7 @@ export default function Album({
                 throw new Error(msg);
             }
 
-            alert("✅ Album deleted successfully.");
+            toast.success("✅ Album deleted successfully.");
             window.location.reload();
         } catch (err) {
             // Show backend message or fallback

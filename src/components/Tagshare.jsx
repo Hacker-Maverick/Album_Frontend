@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { store } from "../../store";
+import { toast } from "react-toastify";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -90,7 +91,7 @@ export default function TagShare({ imageIds = [], onClose }) {
   // 🔹 Submit tagging (share)
   async function shareTags() {
     if (tags.length === 0) {
-      alert("Add at least one username to tag.");
+      toast.warning("Add at least one username to tag.");
       return;
     }
 
@@ -118,14 +119,14 @@ export default function TagShare({ imageIds = [], onClose }) {
       }
 
       await res.json();
-      alert("Shared successfully!");
+      toast.success("Shared successfully!");
       setTags([]);
       setInput("");
       setSuggestions([]);
       onClose?.(true); // notify parent of success
     } catch (err) {
       console.error("Error sharing images:", err.message || err);
-      alert("Error sharing: " + (err.message || "Unknown error"));
+      toast.error("Error sharing: " + (err.message || "Unknown error"));
     }
   }
 

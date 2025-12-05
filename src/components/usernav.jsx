@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/userSlice";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { fetchUser } from "../utils/fetchUser";
+import { toast } from "react-toastify";
 
 export default function Nav() {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ export default function Nav() {
     dispatch(logout());
     localStorage.removeItem("album_jwt_token");
     localStorage.removeItem("last_visited_route");
-    alert("Logged out successfully.");
+    toast.success("Logged out successfully.");
     navigate("/login");
   };
 
@@ -58,12 +59,12 @@ export default function Nav() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to create album");
 
-      alert("Hidden Album created successfully!");
+      toast.success("Hidden Album created successfully!");
       await fetchUser();
       navigate("/dashboard/hidden", { state: { openHidden: true } });
     } catch (err) {
       console.error("Error creating hidden album:", err);
-      alert("Could not create Hidden Album. Please try again.");
+      toast.error("Could not create Hidden Album. Please try again.");
     } finally {
       setSettingsOpen(false);
       setMobileOpen(false);

@@ -4,6 +4,7 @@ import { useDropzone } from "react-dropzone";
 import { useSelector } from "react-redux";
 import { generateThumbnail } from "../utils/generateThumbnail"; // 👈 add this
 import UserNav from "../components/usernav.jsx";
+import { toast } from "react-toastify";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -106,11 +107,11 @@ export default function UploadPage() {
   // Upload handler
   // -------------------------------------
   const handleUpload = async () => {
-    if (!files.length) return alert("Please add files");
+    if (!files.length) return toast.warning("Please add files");
     if (!eventName || !eventDate)
-      return alert("Event name and date are required");
+      return toast.warning("Event name and date are required");
     if (!selectedAlbums.length)
-      return alert("Select at least one album");
+      return toast.warning("Select at least one album");
 
     setIsUploading(true);
     setFadeOut(false);
@@ -201,7 +202,7 @@ export default function UploadPage() {
       if (!completeRes.ok)
         throw new Error(completeData.message || "Upload complete failed");
 
-      alert("Upload completed successfully!");
+      toast.success("Upload completed successfully!");
       window.location.reload();
 
       // Reset form
@@ -212,7 +213,7 @@ export default function UploadPage() {
       setTagees([]);
     } catch (err) {
       console.error(err);
-      alert("Upload failed: " + err.message);
+      toast.error("Upload failed: " + err.message);
     } finally {
       setFadeOut(true);
       setTimeout(() => {

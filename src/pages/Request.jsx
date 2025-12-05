@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import UserNav from "../components/usernav.jsx";
+import { toast } from "react-toastify";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -94,7 +95,7 @@ export default function RequestsPage() {
 
   const openAcceptModal = (i) => {
     if (!selectedImages.length) {
-      alert("Select at least one image using the checkboxes.");
+      toast.warning("Select at least one image using the checkboxes.");
       return;
     }
     setSelectedRequestIndex(i);
@@ -111,7 +112,7 @@ export default function RequestsPage() {
       : req.images.map((img) => img.id);
 
     if (!imagesToAccept.length) {
-      alert("No images in this request.");
+      toast.warning("No images in this request.");
       return;
     }
 
@@ -127,11 +128,11 @@ export default function RequestsPage() {
 
   const handleAccept = async () => {
     if (!selectedImages.length)
-      return alert("Select at least one image to accept");
+      return toast.warning("Select at least one image to accept");
     if (!eventName || !eventDate)
-      return alert("Event name and date required");
+      return toast.warning("Event name and date required");
     if (!selectedAlbums.length)
-      return alert("Select at least one album");
+      return toast.warning("Select at least one album");
 
     try {
       const res = await fetch(`${API_URL}/requests/accept`, {
@@ -153,7 +154,7 @@ export default function RequestsPage() {
       const resjson = await res.json();
       if (!res.ok) throw new Error(resjson.message || "Failed to accept images");
 
-      alert("Images accepted successfully!");
+      toast.succcess("Images accepted successfully!");
 
       window.location.reload();
 
@@ -168,7 +169,7 @@ export default function RequestsPage() {
       setTagees([]);
       setTagInput("");
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -195,7 +196,7 @@ export default function RequestsPage() {
         setSelectedImages([]);
       }
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import ProfileInfoDisplay from "./Profileinfo2";
+import { toast } from "react-toastify";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -25,7 +26,7 @@ export default function ProfileInfoLogic() {
     }
   }, [user]);
 
-  const notify = (msg) => alert(msg);
+  const notify = (msg) => toast.success(msg);
 
   // --- EMAIL CHANGE ---
   const handleEmailChange = async () => {
@@ -44,9 +45,9 @@ export default function ProfileInfoLogic() {
       });
       const data = await res.json();
       if (res.ok) notify("Email updated successfully. Please verify it.");
-      else notify(data.error || "Failed to update email");
+      else toast.error(data.error || "Failed to update email");
     } catch {
-      notify("Server error");
+      toast.error("Server error");
     } finally {
       setLoading(false);
       window.location.reload();
@@ -72,9 +73,9 @@ export default function ProfileInfoLogic() {
       });
       const data = await res.json();
       if (res.ok) notify("Phone updated successfully. Please verify it.");
-      else notify(data.error || "Failed to update phone");
+      else toast.error(data.error || "Failed to update phone");
     } catch {
-      notify("Server error");
+      toast.error("Server error");
     } finally {
       setLoading(false);
       window.location.reload();
@@ -98,13 +99,13 @@ export default function ProfileInfoLogic() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Your account has been deleted successfully.");
+        toast.success("Your account has been deleted successfully.");
         window.location.href = "/";
       } else {
-        alert(data.error || "Failed to delete account");
+        toast.error(data.error || "Failed to delete account");
       }
     } catch {
-      alert("Server error");
+      toast.error("Server error");
     } finally {
       setLoading(false);
     }
@@ -129,13 +130,13 @@ export default function ProfileInfoLogic() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Password changed successfully");
+        toast.success("Password changed successfully");
         setOldPassword("");
         setNewPassword("");
         setPasswordModal(false);
-      } else alert(data.error || "Failed to change password");
+      } else toast.error(data.error || "Failed to change password");
     } catch {
-      alert("Server error");
+      toast.error("Server error");
     } finally {
       setLoading(false);
     }
@@ -152,18 +153,18 @@ export default function ProfileInfoLogic() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(data.message || "OTP sent successfully");
+        toast.success(data.message || "OTP sent successfully");
         setOtpModal(type);
-      } else alert(data.error || "Failed to send OTP");
+      } else toast.error(data.error || "Failed to send OTP");
     } catch {
-      alert("Server error");
+      toast.error("Server error");
     } finally {
       setLoading(false);
     }
   };
 
   const verifyOtp = async () => {
-    if (!otp.trim()) return alert("Enter OTP first");
+    if (!otp.trim()) return toast.info("Enter OTP first");
     setLoading(true);
     try {
       const endpoint =
@@ -178,11 +179,11 @@ export default function ProfileInfoLogic() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Verification successful");
+      toast.success("Verification successful");
         setOtpModal(null);
-      } else alert(data.error || "Invalid OTP");
+      } else toast.error(data.error || "Invalid OTP");
     } catch {
-      alert("Server error");
+      toast.error("Server error");
     } finally {
       setLoading(false);
       window.location.reload();

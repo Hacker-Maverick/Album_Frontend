@@ -14,6 +14,7 @@ import TagShare from "../components/TagShare";
 import { deleteImages } from "../utils/deleteImages";
 import { editImages } from "../utils/editImages";
 import { store } from "../../store";
+import { toast } from "react-toastify";
 
 export default function ImageFooter({
   albumId,
@@ -151,7 +152,7 @@ export default function ImageFooter({
       window.location.reload();
     } catch {
       setDeleting(false);
-      alert("Delete failed");
+      toast.error("Delete failed");
     }
   };
 
@@ -173,7 +174,7 @@ export default function ImageFooter({
       window.location.reload();
     } catch (e) {
       console.error("Failed to update event/date", e);
-      alert("Failed to update event/date. Please try again.");
+      toast.error("Failed to update event/date. Please try again.");
     }
   };
 

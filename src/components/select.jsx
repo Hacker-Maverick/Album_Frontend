@@ -17,6 +17,7 @@ import { deleteImages } from "../utils/deleteImages";
 import { editImages } from "../utils/editImages";
 import { fetchDownloadLinks } from "../utils/downloadlink";
 import { store } from "../../store";
+import { toast } from "react-toastify";
 
 export default function Select({
   currentAlbum,
@@ -100,7 +101,7 @@ export default function Select({
   // ✅ FIXED: Awaiting download link fetch
   const handleDownload = async () => {
     const ids = Array.from(selectedImages);
-    if (!ids.length) return alert("Please select images to download.");
+    if (!ids.length) return toast.info("Please select images to download.");
 
     try {
       const response = await fetchDownloadLinks(ids);
@@ -108,7 +109,7 @@ export default function Select({
         .map((item) => item.downloadUrl || item.url || "")
         .filter((u) => typeof u === "string" && u.trim() !== "");
 
-      if (!urls.length) return alert("No downloadable links found.");
+      if (!urls.length) return toast.error("No downloadable links found.");
 
       // Single image → direct download
       if (urls.length === 1) {
@@ -143,7 +144,7 @@ export default function Select({
 
       saveAs(zipBlob, `Albumify_${Date.now()}.zip`);
     } catch {
-      alert("Failed to download images.");
+      toast.error("Failed to download images.");
     }
   };
 
@@ -185,7 +186,7 @@ export default function Select({
 
   const confirmEventAction = async () => {
     if (!eventName || !eventDate) {
-      alert("Please enter both event name and date.");
+      toast.warning("Please enter both event name and date.");
       return;
     }
 
@@ -204,7 +205,7 @@ export default function Select({
       window.location.reload();
     } catch (err) {
       console.error("editImages failed:", err);
-      alert("Failed to complete action.");
+      toast.error("Failed to complete action.");
     }
   };
 
@@ -225,7 +226,7 @@ export default function Select({
       window.location.reload();
     } catch {
       setDeleting(false);
-      alert("Delete failed");
+      toast.error("Delete failed");
     }
   };
 
@@ -426,7 +427,7 @@ export default function Select({
                   const date = eventDate?.trim() || editModal.eventDate;
 
                   if (!event || !date) {
-                    alert("Please fill both fields.");
+                    toast.warning("Please fill both fields.");
                     return;
                   }
 
@@ -435,7 +436,7 @@ export default function Select({
                     const state = store.getState();
                     const token = state.user?.token;
                     if (!token) {
-                      alert("Unauthorized. Please log in again.");
+                      toast.warning("Unauthorized. Please log in again.");
                       return;
                     }
 
@@ -455,14 +456,14 @@ export default function Select({
 
                     const data = await res.json();
                     if (res.ok) {
-                      alert("✅ Event updated successfully!");
+                      toast.success("✅ Event updated successfully!");
                       window.location.reload();
                     } else {
-                      alert("❌ Failed: " + (data?.message || "Unknown error"));
+                      toast.error("❌ Failed: " + (data?.message || "Unknown error"));
                     }
                   } catch (err) {
                     console.error(err);
-                    alert("❌ Server error");
+                    toast.error("❌ Server error");
                   }
                 }}
               >

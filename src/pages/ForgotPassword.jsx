@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -13,7 +14,7 @@ export default function ForgotPassword() {
 
   // --- Step 1: Send OTP ---
   const handleSendOtp = async () => {
-    if (!identifier.trim()) return alert("Please enter email or phone number");
+    if (!identifier.trim()) return toast.warning("Please enter email or phone number");
     setLoading(true);
     setMessage("");
 
@@ -28,11 +29,11 @@ export default function ForgotPassword() {
         setMessage(data.message);
         setStep(2);
       } else {
-        alert(data.error || "Failed to send OTP");
+        toast.error(data.error || "Failed to send OTP");
       }
     } catch (err) {
       console.error(err);
-      alert("Error sending OTP");
+      toast.error("Error sending OTP");
     } finally {
       setLoading(false);
     }
@@ -40,7 +41,7 @@ export default function ForgotPassword() {
 
   // --- Step 2: Verify OTP ---
   const handleVerifyOtp = async () => {
-    if (!otp.trim()) return alert("Please enter OTP");
+    if (!otp.trim()) return toast.warning("Please enter OTP");
     setLoading(true);
     setMessage("");
 
@@ -55,11 +56,11 @@ export default function ForgotPassword() {
         setMessage("OTP verified! You can now reset your password.");
         setStep(3);
       } else {
-        alert(data.error || "OTP verification failed");
+        toast.error(data.error || "OTP verification failed");
       }
     } catch (err) {
       console.error(err);
-      alert("Error verifying OTP");
+      toast.error("Error verifying OTP");
     } finally {
       setLoading(false);
     }
@@ -67,7 +68,7 @@ export default function ForgotPassword() {
 
   // --- Step 3: Reset Password ---
   const handleResetPassword = async () => {
-    if (!newPassword.trim()) return alert("Please enter a new password");
+    if (!newPassword.trim()) return toast.info("Please enter a new password");
     setLoading(true);
     setMessage("");
 
@@ -82,11 +83,11 @@ export default function ForgotPassword() {
         setMessage(data.message);
         setStep(4); // success step
       } else {
-        alert(data.error || "Failed to reset password");
+        toast.error(data.error || "Failed to reset password");
       }
     } catch (err) {
       console.error(err);
-      alert("Error resetting password");
+      toast.error("Error resetting password");
     } finally {
       setLoading(false);
     }

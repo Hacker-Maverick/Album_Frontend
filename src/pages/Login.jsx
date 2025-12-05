@@ -5,6 +5,7 @@ import { Link,useNavigate } from "react-router-dom"
 import { setUser } from "../../store/userSlice"
 import { GoogleLogin } from "@react-oauth/google"
 import { fetchUser } from "../utils/fetchUser"
+import { toast } from "react-toastify"
 
 const API_URL = import.meta.env.VITE_API_BASE_URL // 🔗 backend base URL
 
@@ -38,7 +39,8 @@ export default function Login() {
       if(verified) navigate("/dashboard")
       else navigate("/verify-email")
     } catch (err) {
-      alert(err.message || "Login failed")
+      toast.error(err.message || "Login failed")
+      navigate("/login")
     }
   }
 
@@ -59,7 +61,8 @@ export default function Login() {
       fetchUser(data.token, dispatch)
       navigate("/dashboard")
     } catch (err) {
-      alert(err.message || "Google login failed")
+      toast.error(err.message || "Google login failed")
+      navigate("/login")
     }
   }
 

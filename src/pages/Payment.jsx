@@ -2,14 +2,15 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import {loadRazorpay} from "../utils/loadRazorpay.js";
+import { loadRazorpay } from "../utils/loadRazorpay.js";
 import { fetchUser } from "../utils/fetchUser.js"
 import Usernav from "../components/usernav.jsx";
+import { toast } from "react-toastify";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function Payment() {
-    const dispatch = useDispatch()
+  const dispatch = useDispatch()
   const location = useLocation();
   const navigate = useNavigate();
   const token = useSelector((state) => state.user.token);
@@ -76,9 +77,9 @@ export default function Payment() {
             });
 
             const verifyData = await verifyRes.json();
-            if (!verifyRes.ok) throw new Error(verifyData.message||"Payment verification failed");
+            if (!verifyRes.ok) throw new Error(verifyData.message || "Payment verification failed");
 
-            alert("✅ Payment successful! Plan activated.");
+            toast.success("✅ Payment successful! Plan activated.");
             fetchUser(data.token, dispatch)
             navigate("/dashboard");
           } catch (err) {
@@ -102,7 +103,7 @@ export default function Payment() {
   };
 
   return (<>
-  <Usernav />
+    <Usernav />
     <div className="flex flex-col min-h-screen items-center justify-center bg-[#fdf6ee] px-4">
       <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-md text-center">
         <h2 className="text-2xl font-semibold text-[#4a3627] mb-4">
@@ -123,6 +124,6 @@ export default function Payment() {
         </button>
       </div>
     </div>
-    </>
+  </>
   );
 }
