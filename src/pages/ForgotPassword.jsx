@@ -83,7 +83,7 @@ export default function ForgotPassword() {
         setMessage(data.message);
         setStep(4); // success step
       } else {
-        toast.error(data.error || "Failed to reset password");
+        toast.error(data.message || "Failed to reset password");
       }
     } catch (err) {
       console.error(err);
@@ -130,9 +130,6 @@ export default function ForgotPassword() {
         {/* Step 2 */}
         {step === 2 && (
           <>
-            <p className="text-sm mb-4 text-gray-600">
-              OTP sent to your {identifier.includes("@") ? "email" : "mobile"}.
-            </p>
             <label className="block text-sm mb-2">Enter OTP</label>
             <input
               type="text"
@@ -146,7 +143,7 @@ export default function ForgotPassword() {
               disabled={loading}
               className="w-full bg-[#8b5e3c] hover:bg-[#70492c] text-white font-medium py-2 rounded-lg transition"
             >
-              {loading ? "Verifying..." : "Verify OTP"}
+              {loading ? "Just a sec..." : "Verify OTP"}
             </button>
 
             <button
@@ -182,9 +179,6 @@ export default function ForgotPassword() {
         {/* Step 4 */}
         {step === 4 && (
           <div className="text-center">
-            <p className="text-green-700 font-medium mb-4">
-              Password reset successfully!
-            </p>
             <Link
               to="/login"
               className="text-[#8b5e3c] font-medium hover:underline"

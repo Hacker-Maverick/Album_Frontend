@@ -45,7 +45,7 @@ export default function ProfileInfoLogic() {
       });
       const data = await res.json();
       if (res.ok) notify("Email updated successfully. Please verify it.");
-      else toast.error(data.error || "Failed to update email");
+      else toast.error(data.message || "Failed to update email");
     } catch {
       toast.error("Server error");
     } finally {
