@@ -10,7 +10,7 @@ import {
   Trash2,
   CheckCircle,
 } from "lucide-react";
-import TagShare from "../components/TagShare";
+import TagShare from "../components/Tagshare";
 import { deleteImages } from "../utils/deleteImages";
 import { editImages } from "../utils/editImages";
 import { store } from "../../store";
