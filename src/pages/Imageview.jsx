@@ -128,7 +128,7 @@ export default function ViewMedia() {
     /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(fileName);
   const curEventName = eventName || cur.event || albumName || "Untitled";
   const headerMonthYear = eventDate
-    ? new Date(eventDate).toLocaleString(undefined, {day:"numeric", month: "long", year: "numeric" })
+    ? new Date(eventDate).toLocaleString(undefined, { day: "numeric", month: "long", year: "numeric" })
     : "";
 
   // ✅ Keyboard controls
@@ -161,7 +161,9 @@ export default function ViewMedia() {
           <button
             aria-label="Close"
             onClick={() => {
-              navigate("/dashboard");
+              if (state?.fromRequest) {
+                navigate("/request");
+              } else { navigate("/dashboard"); }
               // setTimeout(() => window.location.reload(), 150);
             }}
             className="text-xl opacity-80 hover:opacity-100"
@@ -216,7 +218,7 @@ export default function ViewMedia() {
                 className={`max-w-[90vw] max-h-[70vh] rounded-lg transition-opacity duration-150 ${isMediaLoading ? "opacity-0" : "opacity-100"
                   }`}
                 onLoadedData={() => setIsMediaLoading(false)}
-                onError={() => {setIsMediaLoading(false);navigate("/dashboard");}}
+                onError={() => { setIsMediaLoading(false); navigate("/dashboard"); }}
               />
             ) : (
               <img
@@ -230,7 +232,7 @@ export default function ViewMedia() {
                   cursor: zoom > 1 ? "grab" : "default",
                 }}
                 onLoad={() => setIsMediaLoading(false)}
-                onError={() => {setIsMediaLoading(false);navigate("/dashboard");}}
+                onError={() => { setIsMediaLoading(false); navigate("/dashboard"); }}
                 draggable={false}
               />
             ))}
