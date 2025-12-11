@@ -37,7 +37,7 @@ export default function Login() {
       localStorage.setItem("album_jwt_token", data.token);
       let verified = await fetchUser(data.token, dispatch)
       if(verified) navigate("/dashboard")
-      else navigate("/verify-email")
+      else navigate("/dashboard")
     } catch (err) {
       toast.error(err.message || "Login failed")
       navigate("/login")
