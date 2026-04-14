@@ -110,7 +110,7 @@ export default function Signup() {
     <div className="flex flex-col min-h-screen bg-[#fdf6ee]">
       {/* Header */}
       <header className="flex justify-between items-center px-8 py-4 border-b border-[#eee0d1]">
-        <h1 className="text-xl font-bold text-[#5a3e2b]">PhotoVault</h1>
+        <h1 className="text-xl font-bold text-[#5a3e2b]">Albumify</h1>
         <Link
           to="/login"
           className="px-4 py-2 text-sm rounded-md bg-[#f6e2d5] text-[#c97f5b] font-medium hover:bg-[#e9d3c5]"
@@ -245,7 +245,7 @@ export default function Signup() {
 
       {/* Footer */}
       <footer className="border-t border-[#eee0d1] px-8 py-6 flex flex-col sm:flex-row justify-between items-center text-sm text-[#6e5542]">
-        <p>© 2025 PhotoVault. All rights reserved.</p>
+        <p>© 2025 Albumify. All rights reserved.</p>
         <div className="flex space-x-6 mt-3 sm:mt-0">
           <a href="#" className="hover:underline">
             About Us
